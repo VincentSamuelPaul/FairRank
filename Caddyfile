@@ -1,0 +1,21 @@
+# Serves the Vite build and proxies /api (and /admin) to Django: same origin,
+# so session cookies and CSRF just work.
+{$SITE_ADDRESS::80} {
+	encode gzip
+
+	handle /api/* {
+		reverse_proxy web:8000
+	}
+	handle /admin/* {
+		reverse_proxy web:8000
+	}
+	handle /static/* {
+		root * /srv/django
+		file_server
+	}
+	handle {
+		root * /srv/app
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -1,0 +1,38 @@
+# Local development only. Auto-loaded by `docker compose`.
+services:
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  web:
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      DEBUG: "true"
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  worker:
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./backend:/app
+
+  caddy:
+    profiles: ["deploy"]  # not needed in dev; Vite serves the frontend
+
+  frontend:
+    image: node:22-alpine
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /app
+    environment:
+      HOME: /tmp
+      VITE_PROXY_TARGET: http://web:8000
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      - web
