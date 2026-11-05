@@ -10,7 +10,7 @@
 		reverse_proxy web:8000
 	}
 	handle /static/* {
-		root * /srv/django
+		root * /srv
 		file_server
 	}
 	handle {

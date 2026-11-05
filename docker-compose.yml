@@ -56,7 +56,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./frontend/dist:/srv/app:ro
-      - static:/srv/django:ro
+      - static:/srv/static:ro
       - caddy_data:/data
     depends_on:
       - web
