@@ -94,4 +94,7 @@ Example JD: Senior Java Developer, 5-8 years, Spring Boot, Noida, notice up to 6
 | A7 | "Masked contacts" = email/phone replaced with masked values for clients until a candidate reaches the interview stage | Brief says masked, does not say when to unmask |
 | A8 | The weekly AI-vs-recruiter comparison is a report computed on demand and by a weekly job, shown to the delivery head | Brief says "weekly sample" |
 | A9 | All CVs in the repo are synthetic; the LLM only ever sees synthetic or consented data | Task rules ban real personal data |
-| A10 | Email/SMS notifications are mocked (written to a notifications log) | Brief allows mocking outside systems |
+| A10 | Email/SMS notifications are mocked (written to a notifications log) | Brief allows mocking outside systems || A11 | A candidate record is one CV screened against one requisition (Candidate has a `requisition`; a Submission is one-to-one with it). The same person on two jobs is two records, with duplicates flagged | Simplest model that gives per-requisition stage, score and client isolation |
+| A12 | JD CTC is stored as INR per year (`ctc_min`, `ctc_max`), nullable because the example JD has none | Brief names CTC but gives no unit |
+| A13 | Pipeline stages are the seven in the brief plus a terminal `rejected` set only by a client's human decision, never from a score | Clients can reject with a reason, so a board needs somewhere to put them |
+| A14 | Demo users, client orgs and phone numbers are synthetic (`@example.com` addresses, placeholder numbers). The brief's sample table has no email or phone, so these are invented to exercise masking | Needed to demo masked contacts and dedupe; covered by A9 |
