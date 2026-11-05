@@ -3,11 +3,11 @@
 Rule: by end of each day something demoable works. Commit throughout.
 
 ## Thu 5 Nov (evening, about 3 h): foundation
-- [ ] Public GitHub repo, first commit with BRIEF.md, CLAUDE.md, PLAN.md
-- [ ] Django project, custom User with roles, ClientOrg, Postgres via docker compose
-- [ ] Session login/logout API + React shell with login page and role redirect
-- [ ] Models + migrations: Requisition, Scorecard/Criterion, Candidate, CVFile, ParsedProfile, Score/CriterionScore, Submission, ViewLog, Consent, Job
-- [ ] Seed command v0 (users, 3 sample candidates, example JD)
+- [~] Public GitHub repo, first commit with BRIEF.md, CLAUDE.md, PLAN.md (committed locally; remote `origin` is set, not pushed yet)
+- [x] Django project, custom User with roles, ClientOrg, Postgres via docker compose
+- [x] Session login/logout API + React shell with login page and role redirect
+- [x] Models + migrations: Requisition, Scorecard/Criterion, Candidate, CVFile, ParsedProfile, Score/CriterionScore, Submission, ViewLog, Consent, Job
+- [x] Seed command v0 (users, 3 sample candidates, example JD)
 
 ## Fri 6 Nov: JD → scorecard, upload, parsing
 - [ ] `call_llm` wrapper (Gemini + Groq fallback, cache, retry, Pydantic validation)
