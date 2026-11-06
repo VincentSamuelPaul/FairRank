@@ -29,3 +29,15 @@ class IsStaffRole(_HasRole):
     """Recruiter or delivery head: internal users, never clients."""
 
     roles = (Role.RECRUITER, Role.DELIVERY_HEAD)
+
+
+class StaffReadRecruiterWrite(BasePermission):
+    """Internal staff may read; only recruiters may change anything. Clients get nothing here."""
+
+    def has_permission(self, request, view) -> bool:
+        user = request.user
+        if not (user and user.is_authenticated):
+            return False
+        if request.method in ("GET", "HEAD", "OPTIONS"):
+            return user.role in (Role.RECRUITER, Role.DELIVERY_HEAD)
+        return user.role == Role.RECRUITER
