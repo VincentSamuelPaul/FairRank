@@ -122,10 +122,16 @@ REST_FRAMEWORK = {
 # --- Uploads
 MAX_UPLOAD_BYTES = int(env("MAX_UPLOAD_BYTES", str(5 * 1024 * 1024)))
 MAX_FILES_PER_BATCH = int(env("MAX_FILES_PER_BATCH", "500"))  # A4
+DATA_UPLOAD_MAX_NUMBER_FILES = MAX_FILES_PER_BATCH  # Django's default is 100
+
+# --- Worker (python manage.py run_worker)
+WORKER_BATCH_SIZE = int(env("WORKER_BATCH_SIZE", "5"))  # CVs scored per tick: rate-limit friendly
+WORKER_POLL_SECONDS = float(env("WORKER_POLL_SECONDS", "2"))
+WORKER_BACKOFF_SECONDS = float(env("WORKER_BACKOFF_SECONDS", "5"))  # doubles per failed attempt
 
 # --- LLM (used from Friday): Gemini Flash primary, Groq fallback, chosen by env
 LLM_PROVIDER = env("LLM_PROVIDER", "gemini")
 GEMINI_API_KEY = env("GEMINI_API_KEY")
-GEMINI_MODEL = env("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = env("GEMINI_MODEL", "gemini-2.0-flash")  # LLM_PROVIDER=offline needs no key
 GROQ_API_KEY = env("GROQ_API_KEY")
 GROQ_MODEL = env("GROQ_MODEL", "llama-3.3-70b-versatile")
