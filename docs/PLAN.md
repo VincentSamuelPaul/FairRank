@@ -10,26 +10,26 @@ Rule: by end of each day something demoable works. Commit throughout.
 - [x] Seed command v0 (users, 3 sample candidates, example JD)
 
 ## Fri 6 Nov: JD → scorecard, upload, parsing
-- [ ] `call_llm` wrapper (Gemini + Groq fallback, cache, retry, Pydantic validation)
-- [ ] JD intake → AI scorecard → editable scorecard UI (versioned)
-- [ ] Bulk upload endpoint (type/size/magic-byte checks), Job queue + worker, progress UI
-- [ ] Text extraction (PDF, DOCX), scan detection → "Needs manual review"
-- [ ] Dedupe (email/phone exact, rapidfuzz on name)
-- [ ] Tests: scan flagged, dedupe
+- [x] `call_llm` wrapper (Gemini + Groq fallback, cache, retry, Pydantic validation)
+- [x] JD intake → AI scorecard → editable scorecard UI (versioned)
+- [x] Bulk upload endpoint (type/size/magic-byte checks), Job queue + worker, progress UI
+- [x] Text extraction (PDF, DOCX), scan detection → "Needs manual review"
+- [x] Dedupe (email/phone exact, rapidfuzz on name)
+- [x] Tests: scan flagged, dedupe
 
 ## Sat 7 Nov: scoring + ranked list
-- [ ] Redaction module + tests
-- [ ] Scoring prompt: per-criterion score + quote; evidence substring verifier + tests
-- [ ] Weighted total, bands, ranked list UI with evidence, filters, low scorers searchable
-- [ ] Candidate detail with CV text and highlighted evidence; ViewLog on open
-- [ ] Seed about 30 synthetic CVs (script) and cached scores
+- [x] Redaction module + tests
+- [x] Scoring prompt: per-criterion score + quote; evidence substring verifier + tests
+- [x] Weighted total, bands, ranked list UI with evidence, filters, low scorers searchable
+- [x] Candidate detail with CV text and highlighted evidence; ViewLog on open
+- [x] Seed about 30 synthetic CVs (script) and cached scores
 
 ## Sun 8 Nov: client portal, pipeline, compliance
-- [ ] Submit to client (open-before-submit enforced), custom manager for client isolation + tests
-- [ ] Client portal (phone-first): masked contacts, shortlist, reject with reason, propose slot, "How we screen" panel
-- [ ] Pipeline board by requisition; stage changes logged
-- [ ] Consent record, deletion + tombstone + tests
-- [ ] Delivery head report: AI rank vs recruiter choice agreement
+- [x] Submit to client (open-before-submit enforced), custom manager for client isolation + tests
+- [x] Client portal (phone-first): masked contacts, shortlist, reject with reason, propose slot, "How we screen" panel
+- [x] Pipeline board by requisition; stage changes logged
+- [x] Consent record, deletion + tombstone + tests
+- [x] Delivery head report: AI rank vs recruiter choice agreement
 
 ## Mon 9 Nov: polish, deploy, docs (buffer in the evening)
 - [ ] Loading / empty / error states everywhere; check at 375 px width; keyboard + contrast pass

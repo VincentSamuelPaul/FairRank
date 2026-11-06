@@ -56,7 +56,7 @@ describe('login page', () => {
 
   it.each([
     ['recruiter', 'Requisitions'],
-    ['delivery_head', 'Pipeline and agreement report'],
+    ['delivery_head', 'Delivery'],
     ['client', 'Your shortlist'],
   ])('sends a %s to their own home', async (role, heading) => {
     mockApi({ '/api/auth/csrf/': { status: 200 }, '/api/auth/login/': { status: 200, body: user(role) } })
