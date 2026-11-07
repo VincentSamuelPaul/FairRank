@@ -65,6 +65,10 @@
   --text-display--line-height: var(--lh-display);
   --text-display--font-weight: var(--fw-display);
   --text-display--letter-spacing: var(--tr-display);
+  --text-hero: var(--fs-hero);
+  --text-hero--line-height: var(--lh-hero);
+  --text-hero--font-weight: var(--fw-display);
+  --text-hero--letter-spacing: var(--tr-hero);
   --text-h1: var(--fs-h1);
   --text-h1--line-height: var(--lh-h1);
   --text-h1--font-weight: var(--fw-h1);
@@ -171,6 +175,8 @@ dialog.modal {
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
@@ -182,10 +188,7 @@ dialog.modal {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--r-frame);
-  background:
-    radial-gradient(38% 95% at 32% 48%, color-mix(in srgb, var(--bg-highlight) 55%, transparent), transparent 75%),
-    radial-gradient(60% 70% at 30% 45%, color-mix(in srgb, var(--bg-highlight) 30%, transparent), transparent 72%),
-    linear-gradient(165deg, var(--bg-bloom) 0%, var(--bg-base) 70%);
+  background: linear-gradient(165deg, var(--bg-bloom) 0%, var(--bg-base) 70%);
 }
 .showcase-canvas::before {
   content: '';
@@ -217,4 +220,67 @@ dialog.modal[open] {
   background:
     radial-gradient(60% 100% at 18% 0%, color-mix(in srgb, var(--bg-bloom) 38%, transparent), transparent 70%),
     radial-gradient(40% 80% at 92% 0%, color-mix(in srgb, var(--bg-highlight) 16%, transparent), transparent 70%);
+}
+
+/* ---- Round 2: motion (all of it is switched off by the prefers-reduced-motion rule above) ---- */
+
+/* The light bloom is its own layer so it can drift with transform only (no repaint). */
+.showcase-bloom {
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(28% 55% at 36% 48%, color-mix(in srgb, var(--bg-highlight) 55%, transparent), transparent 75%),
+    radial-gradient(45% 60% at 34% 46%, color-mix(in srgb, var(--bg-highlight) 28%, transparent), transparent 72%);
+  animation: bloom-drift 30s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes bloom-drift {
+  from { transform: translate3d(-4%, -2%, 0) scale(1); }
+  to { transform: translate3d(6%, 3%, 0) scale(1.08); }
+}
+
+/* Film grain at 3%: inline SVG noise, no image file. */
+.showcase-canvas::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+.ring-fill {
+  animation: ring-fill var(--ms, 400ms) var(--ease) both;
+}
+@keyframes ring-fill {
+  from { stroke-dasharray: 0 100; }
+}
+
+.proof-in {
+  animation: proof-in 380ms var(--ease) both;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes proof-in {
+  from { opacity: 0; transform: translateY(var(--shift)); }
+}
+
+.tick path {
+  stroke-dasharray: 1;
+  animation: tick-draw 320ms var(--ease) both;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes tick-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* Route/page transition: 160ms fade and 6px rise. */
+.page-enter {
+  animation: page-enter 160ms var(--ease) both;
+}
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(var(--shift)); }
 }

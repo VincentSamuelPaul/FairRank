@@ -56,12 +56,14 @@
   /* Type: Inter Tight (self-hosted via Fontsource) */
   --font-ui: 'Inter Tight Variable', ui-sans-serif, system-ui, sans-serif;
   --fs-display: clamp(44px, 7vw, 112px);
+  --fs-hero: clamp(56px, 9vw, 150px); /* login headline (round 2) */
   --fs-h1: 32px;
   --fs-h2: 22px;
   --fs-body: 15px;
   --fs-small: 13px;
   --fs-micro: 11.5px;
   --lh-display: 0.95;
+  --lh-hero: 0.92;
   --lh-h1: 1.1;
   --lh-h2: 1.2;
   --lh-body: 1.55;
@@ -73,6 +75,7 @@
   --fw-body: 400;
   --fw-micro: 500;
   --tr-display: -0.03em;
+  --tr-hero: -0.04em;
   --tr-h1: -0.02em;
   --tr-h2: -0.01em;
   --tr-micro: 0.04em;

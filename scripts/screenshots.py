@@ -82,11 +82,29 @@ def run(name: str, view: str, page: Page) -> None:
     print("wrote", path)
 
 
+def login_animation(browser) -> None:
+    """Normal-motion frames of the login demo choreography (the other captures use reduced motion, i.e. the final state)."""
+    for view, size in VIEWS.items():
+        ctx = browser.new_context(viewport=size, device_scale_factor=2, is_mobile=view == "phone", has_touch=view == "phone")
+        page = ctx.new_page()
+        page.goto(f"{BASE}/login")
+        for ms, label in ((450, "t0450"), (1500, "t1500"), (2700, "t2700"), (7600, "t7600")):
+            page.wait_for_timeout(ms - (0 if label == "t0450" else {"t1500": 450, "t2700": 1500, "t7600": 2700}[label]))
+            OUT.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(OUT / f"login-anim-{view}-{label}.png"))
+            print("wrote", OUT / f"login-anim-{view}-{label}.png")
+        ctx.close()
+
+
 def main(names: list[str]) -> None:
     if names == ["all"]:
         names = ["login", "components", "ranked", "candidate", "portal", "portal-candidate"]
     with sync_playwright() as p:
         browser = p.chromium.launch()
+        if names == ["login-anim"]:
+            login_animation(browser)
+            browser.close()
+            return
         for name in names or ["login"]:
             for view, size in VIEWS.items():
                 ctx = browser.new_context(

@@ -4,7 +4,7 @@ import { createCn } from 'cn/config'
 export const cn = createCn({
   extend: {
     classGroups: {
-      'font-size': [{ text: ['display', 'h1', 'h2', 'body', 'small', 'micro'] }],
+      'font-size': [{ text: ['display', 'hero', 'h1', 'h2', 'body', 'small', 'micro'] }],
       rounded: [{ rounded: ['frame', 'card', 'input', 'pill', 'xs'] }],
     },
   },
