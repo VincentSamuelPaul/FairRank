@@ -22,7 +22,7 @@ export function EvidenceQuote({ criterion, quote, status, unverified = false, cl
     return (
       <div className={cn('rounded-input border border-dashed px-3 py-2', className)}>
         <p className="text-micro uppercase text-text-2">{criterion}</p>
-        <p className="text-small text-text-3">No evidence found</p>
+        <p className="text-small text-text-2">No evidence found</p>
       </div>
     )
   }

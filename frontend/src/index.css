@@ -104,6 +104,7 @@
     line-height: var(--lh-body);
     font-weight: var(--fw-body);
     -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums; /* every score, count, date and rank aligns in columns */
     min-height: 100vh;
   }
   :focus-visible {

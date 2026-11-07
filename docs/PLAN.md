@@ -32,7 +32,7 @@ Rule: by end of each day something demoable works. Commit throughout.
 - [x] Delivery head report: AI rank vs recruiter choice agreement
 
 ## Mon 9 Nov: polish, deploy, docs (buffer in the evening)
-- [ ] Loading / empty / error states everywhere; check at 375 px width; keyboard + contrast pass
+- [x] Loading / empty / error states everywhere; check at 375 px width; keyboard + contrast pass (`scripts/qa.sh`: 43 rendered-UI checks, `scripts/contrast.py`)
 - [ ] Full test run green; fix bugs; secrets scan (`git grep` for keys); `.env.example`
 - [ ] Deploy on the OptiPlex (compose + Caddy + Cloudflare Tunnel); smoke test the live URL from your phone on mobile data
 - [ ] deployment.md (run locally, deploy, env var names, demo logins)
@@ -46,3 +46,11 @@ Rule: by end of each day something demoable works. Commit throughout.
 4. Dedupe fuzzy matching (keep exact email/phone)
 
 Never cut: evidence verification, blind scoring, client isolation, open-before-submit, tests for these, deployment.md, TDD.
+
+## UI redesign (docs/DESIGN.md)
+- [x] Tokens (`frontend/src/styles/tokens.css`), Inter Tight self-hosted, no hex outside tokens
+- [x] Component kit in `components/ui/` + `/dev/components` (dev only)
+- [x] Login rebuilt to the Tidewell composition (two review rounds, `docs/screens/`)
+- [x] Workspace surface: ranked list, candidate detail, client portal (one review round each)
+- [x] Quality checklist run: `scripts/qa.sh` (widths 375/768/1440, states, keyboard, dead buttons, tabular figures, pixel contrast)
+- [ ] Still on the old styling (tokens only, not yet re-composed with the kit): requisitions list, scorecard editor, upload, pipeline, delivery head report
