@@ -4,7 +4,7 @@ Run against the dev server (docker compose up). Uses the official Playwright ima
 
     scripts/screenshots.sh components
 
-Screens: login, components, ranked, candidate, portal, portal-candidate (default: login). Pass `all` for everything.
+Screens: login, login-anim, components, requisitions, new-requisition, ranked, scorecard, upload, candidate, portal, portal-candidate (default: login). Pass `all` for everything.
 Demo accounts are synthetic (see deployment.md); the password can be overridden with FAIRRANK_DEMO_PASSWORD.
 """
 import os
@@ -48,6 +48,24 @@ def run(name: str, view: str, page: Page) -> None:
         page.goto(f"{BASE}/login")
     elif name == "components":
         page.goto(f"{BASE}/dev/components")
+    elif name == "requisitions":
+        sign_in(page, RECRUITER)
+        page.wait_for_selector("ul > li a[href^='/requisitions/']")
+        page.wait_for_timeout(900)  # staggered entrance + count-ups
+    elif name == "new-requisition":
+        sign_in(page, RECRUITER)
+        page.get_by_role("button", name="New requisition").first.click()
+        page.wait_for_selector("dialog[open]")
+    elif name == "scorecard":
+        sign_in(page, RECRUITER)
+        open_ranked(page)
+        page.get_by_role("link", name="Scorecard").click()
+        page.wait_for_selector("text=Scoring criteria")
+    elif name == "upload":
+        sign_in(page, RECRUITER)
+        open_ranked(page)
+        page.get_by_role("link", name="Upload CVs").click()
+        page.wait_for_selector("text=Drop PDF or DOCX CVs here")
     elif name == "ranked":
         sign_in(page, RECRUITER)
         open_ranked(page)
@@ -65,12 +83,13 @@ def run(name: str, view: str, page: Page) -> None:
     else:
         raise SystemExit(f"unknown screen: {name}")
     settle(page)
-    full = name != "login" or view == "phone"
+    full = (name not in ("login", "new-requisition")) or (view == "phone" and name != "new-requisition")
     dims = page.evaluate("[document.documentElement.scrollWidth, innerWidth, document.documentElement.scrollHeight, innerHeight]")
     print(f"{name}-{view}: scrollW={dims[0]} viewW={dims[1]} scrollH={dims[2]} viewH={dims[3]}" + ("  HORIZONTAL SCROLL" if dims[0] > dims[1] else ""))
-    if dims[0] > dims[1]:
-        wide = page.evaluate("""[...document.querySelectorAll('body *')].filter(e => e.getBoundingClientRect().right > innerWidth + 0.5).slice(0, 6).map(e => e.tagName + '.' + String(e.className).slice(0, 80))""")
-        print("  overflowing:", wide)
+    designed = VIEWS[view]["width"]
+    wide = page.evaluate("(w) => [...document.querySelectorAll('body *')].filter(e => e.getBoundingClientRect().right > w + 0.5 && !e.closest('[aria-hidden=true]')).slice(0, 6).map(e => e.tagName + '.' + String(e.className).slice(0, 90))", designed)
+    if wide:
+        print(f"  WIDER THAN {designed}px:", wide)
     OUT.mkdir(parents=True, exist_ok=True)
     if CLIP:
         x, y, w, h = (float(v) for v in CLIP.split(","))
@@ -98,7 +117,7 @@ def login_animation(browser) -> None:
 
 def main(names: list[str]) -> None:
     if names == ["all"]:
-        names = ["login", "components", "ranked", "candidate", "portal", "portal-candidate"]
+        names = ["login", "components", "requisitions", "new-requisition", "ranked", "scorecard", "upload", "candidate", "portal", "portal-candidate"]
     with sync_playwright() as p:
         browser = p.chromium.launch()
         if names == ["login-anim"]:

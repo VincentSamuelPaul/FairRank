@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useParams } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import { AppShell, PageHeader } from '@/components/AppShell'
 import { Async, Skeleton } from '@/components/states'
 import { notice, years } from '@/lib/format'
@@ -17,6 +17,7 @@ export function RequisitionLayout() {
   const { id = '' } = useParams()
   const { data: user } = useMe()
   const query = useRequisition(id)
+  const { pathname } = useLocation()
   return (
     <AppShell>
       <Async query={query} skeleton={<Skeleton className="h-16 w-full" />}>
@@ -53,7 +54,9 @@ export function RequisitionLayout() {
           </NavLink>
         ))}
       </nav>
-      <Outlet />
+      <div key={pathname} className="page-enter">
+        <Outlet />
+      </div>
     </AppShell>
   )
 }

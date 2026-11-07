@@ -1,28 +1,22 @@
 import { Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Async, EmptyState, ListSkeleton } from '@/components/states'
+import { Async, EmptyState } from '@/components/states'
+import { BandBar, type BandKey } from '@/components/ui/band-bar'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { CandidateRow } from '@/components/ui/candidate-row'
 import { Select } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { RowListSkeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
 import { useMe } from '@/lib/auth'
 import { STAGES } from '@/lib/format'
+import { CountUp } from '@/lib/motion'
 import { useCandidateActions, useRanked, useRequisition } from '@/lib/queries'
-import type { CandidateRow as Row, RankedList } from '@/lib/types'
+import type { CandidateRow as Row } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-type Filter = 'all' | 'strong' | 'possible' | 'weak' | 'review' | 'duplicates'
-
-const FILTERS: { key: Filter; label: string; count: (c: RankedList['counts']) => number }[] = [
-  { key: 'all', label: 'All', count: (c) => c.total },
-  { key: 'strong', label: 'Strong', count: (c) => c.strong },
-  { key: 'possible', label: 'Possible', count: (c) => c.possible },
-  { key: 'weak', label: 'Weak', count: (c) => c.weak },
-  { key: 'review', label: 'Needs review', count: (c) => c.needs_review + c.failed },
-  { key: 'duplicates', label: 'Duplicates', count: (c) => c.duplicates },
-]
+type Filter = 'all' | BandKey | 'duplicates'
 
 const toParams = (f: Filter) => ({
   band: f === 'strong' || f === 'possible' || f === 'weak' ? f : undefined,
@@ -89,26 +83,24 @@ export function RankedPage() {
       <div ref={sentinel} aria-hidden className="-mb-5 h-px" />
       <div className={cn('md:sticky md:top-(--header-h) md:z-10 -mx-(--gutter) space-y-3 border-b border-transparent bg-ws px-(--gutter) pb-3 pt-3', stuck && 'border-border')}>
         <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-          <p className={cn('hidden truncate text-body font-medium transition-opacity duration-(--dur-base) md:block md:opacity-0', stuck && 'md:opacity-100')} aria-hidden={!stuck}>{req.data?.title ?? 'Ranked list'}</p>
-          <p className="tnum text-small text-text-2">
-            {counts ? `${counts.total} CVs` : ' '}
-          </p>
+          <p className="hidden truncate text-small text-text-2 md:block">{stuck ? <span className="font-medium text-text-1">{req.data?.title}</span> : 'Best match first'}</p>
         </div>
+        {counts && <BandBar counts={{ strong: counts.strong, possible: counts.possible, weak: counts.weak, review: counts.needs_review + counts.failed }} value={filter} onChange={setFilter} />}
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <div role="group" aria-label="Filter CVs" className="-mx-(--gutter) flex gap-2 overflow-x-auto px-(--gutter) md:mx-0 md:flex-1 md:flex-wrap md:overflow-visible md:px-0">
-            {FILTERS.map((f) => (
+          <div role="group" aria-label="Other filters" className="flex gap-2 md:flex-1">
+            {([['all', 'All', counts?.total], ['duplicates', 'Duplicates', counts?.duplicates]] as const).map(([key, label, n]) => (
               <button
-                key={f.key}
+                key={key}
                 type="button"
-                aria-pressed={filter === f.key}
-                onClick={() => setFilter(f.key)}
+                aria-pressed={filter === key}
+                onClick={() => setFilter(key)}
                 className={cn(
-                  'inline-flex h-11 shrink-0 items-center gap-2 rounded-pill border px-4 text-small transition-colors duration-(--dur-fast) md:h-9',
-                  filter === f.key ? 'border-accent bg-accent text-on-accent' : 'border-border-strong text-text-1 hover:bg-surface-2',
+                  'inline-flex h-11 items-center gap-2 rounded-pill border px-4 text-small transition-colors duration-(--dur-fast) md:h-9',
+                  filter === key ? 'border-accent bg-accent text-on-accent' : 'border-border-strong text-text-1 hover:bg-surface-2',
                 )}
               >
-                {f.label}
-                <span className="tnum opacity-80">{counts ? f.count(counts) : '–'}</span>
+                {label}
+                <span className="tnum opacity-80">{n === undefined ? '–' : <CountUp value={n} />}</span>
               </button>
             ))}
           </div>
@@ -129,7 +121,7 @@ export function RankedPage() {
 
       <Async
         query={query}
-        skeleton={<ListSkeleton rows={4} />}
+        skeleton={<RowListSkeleton rows={3} />}
         isEmpty={(d) => d.candidates.length === 0}
         empty={
           filtered ? (

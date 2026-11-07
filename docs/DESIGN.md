@@ -129,3 +129,18 @@ Stage hues never colour text or anything but the dot, tint and border. `--ok/--w
 
 ### 7.4 Score bands tint their context (ranked list)
 Each row has a `--stripe` (3px) left edge in the band colour (Strong ok, Possible warn, Weak bad); Needs review rows use a dashed `--info` stripe because there is no score to colour by. The ScoreRing has a soft glow behind it in the band colour (12%, `--glow-blur` 24px).
+
+### 7.5 Login ("wow" version)
+Same composition as section 3, more energy. Headline `--fs-hero` `clamp(56px, 9vw, 150px)`, weight 300, line-height 0.92, tracking -0.04em; the lead words ("Hiring that shows") at 70% cream and the key phrase ("its work.") at full cream. A floating glass card tilted -2deg holds a live proof sample (synthetic CND IDs from the brief); a second card behind it peeks out with a "Needs manual review" candidate. Choreography on each sample: the ring fills 0 to score over 900ms, then the two quotes reveal one after another and a Verified tick draws itself (about 1.2s). It cycles every 7s through Strong 82, Possible 61 (with one "No evidence found") and a Needs review sample; it pauses on hover or focus, has three dots to pick a sample, and is labelled "Live demo, synthetic data". The background bloom drifts (30s, transform only) over the streak texture, with a 3% grain overlay. Quick-fill demo chips (Recruiter, Delivery head, Client) show only when `VITE_DEMO_MODE=true`.
+
+### 7.6 App shell and command palette
+Slim 56px bar solid on the page colour, a bottom hairline that fades out at both ends, a `--signal` underline on the active nav item, a "Search" button and an initials avatar that opens an account menu (Esc and outside click close it). A very subtle `page-wash` sits behind the page header. **Cmd/Ctrl+K** opens the command palette (staff only): Actions (New requisition for recruiters, All requisitions), Requisitions, and Candidates (built from the ranked lists the API already serves); arrow keys move, Enter opens, Esc closes. Pages enter with a 160ms fade and 6px rise; grids stagger in 40ms steps.
+
+### 7.7 Requisition card anatomy
+Client monogram tile (neutral, initials), title and `client · location`, an "N unread" marker in `--signal` when CVs are scored but nobody has opened them, the criteria line, a stacked distribution bar with the counts spelled out (Strong, Possible, Weak, Review), seven pipeline segments filled to the furthest stage reached (each in its stage hue, with "Furthest: Stage" in words), and a footer with CV and submitted counts and the date. A summary strip above the grid shows open requisitions, CVs screened this week and awaiting client, derived from the ranked lists. Cards lift 2px and brighten their border on hover.
+
+### 7.8 Ranked row anatomy
+Left: rank (large, dim, `--text-3` at heading size) above the ScoreRing with its band glow. Middle: name (largest text on the row), a single-line meta row, two evidence chips (criterion plus one-line quote; click to expand into the full verified quote), and a row of tiny per-criterion dots with a sentence ("4 of 5 criteria have evidence"). Near-identical quotes are shown once (the stronger). Right: exactly one recommended next action as the cream pill; anything else is ghost, and a ghost "Submit to client" is disabled with a tooltip until the CV has been opened. The sticky header has a segmented band bar sized by counts (click a band to filter, click again to clear).
+
+### 7.9 Motion rules
+Numbers count up once on first paint (400ms; 900ms on the login ring). Everything animated is switched off by `prefers-reduced-motion` (durations and delays go to zero), never blocks interaction, and is a no-op in tests. Skeletons use the same grid as the final layout.

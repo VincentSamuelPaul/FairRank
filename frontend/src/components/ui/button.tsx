@@ -1,6 +1,8 @@
 import { Button as ButtonPrimitive } from '@base-ui/react/button'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { ArrowRight } from 'lucide-react'
+import { Spinner } from '@/components/states'
+import { Tooltip } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 const secondary =
@@ -40,15 +42,24 @@ const variants = cva(
 /** cva output, merged so `border-border-strong` beats `border-transparent` also when used on a <Link>. */
 export const buttonVariants = (o?: Parameters<typeof variants>[0]) => cn(variants(o))
 
-type Props = ButtonPrimitive.Props & VariantProps<typeof variants> & { arrow?: boolean }
+type Props = ButtonPrimitive.Props & VariantProps<typeof variants> & {
+  arrow?: boolean
+  /** Spinner and disabled while a request is running. */
+  loading?: boolean
+  /** When disabled, explains why in a tooltip (also reachable by keyboard). */
+  disabledReason?: string
+}
 
-function Button({ className, variant = 'default', size = 'default', arrow = false, children, ...props }: Props) {
-  return (
-    <ButtonPrimitive data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props}>
+function Button({ className, variant = 'default', size = 'default', arrow = false, loading = false, disabledReason, children, disabled, ...props }: Props) {
+  const off = disabled || loading
+  const btn = (
+    <ButtonPrimitive data-slot="button" aria-busy={loading || undefined} disabled={off} className={cn(buttonVariants({ variant, size, className }))} {...props}>
+      {loading && <Spinner />}
       {children}
-      {arrow && <ArrowRight className="transition-transform duration-(--dur-fast) ease-ui group-hover/button:translate-x-0.5" aria-hidden />}
+      {arrow && !loading && <ArrowRight className="transition-transform duration-(--dur-fast) ease-ui group-hover/button:translate-x-0.5" aria-hidden />}
     </ButtonPrimitive>
   )
+  return off && disabledReason && !loading ? <Tooltip content={disabledReason} className={typeof className === 'string' && className.includes('w-full') ? 'w-full' : undefined}>{btn}</Tooltip> : btn
 }
 
 export { Button }

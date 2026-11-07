@@ -172,6 +172,18 @@ dialog.modal {
   }
 }
 
+/* The command palette is a top-aligned dialog on every screen size, not a bottom sheet. */
+dialog.palette {
+  margin: 12dvh auto auto auto;
+}
+@media (max-width: 640px) {
+  dialog.palette {
+    margin: 8dvh auto auto auto;
+    width: calc(100% - 2 * var(--gutter));
+    border-radius: var(--r-card);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -283,4 +295,10 @@ dialog.modal[open] {
 }
 @keyframes page-enter {
   from { opacity: 0; transform: translateY(var(--shift)); }
+}
+
+/* Staggered entrance for grids (set --d per item, 40ms steps). */
+.rise-in {
+  animation: page-enter var(--dur-base) var(--ease) both;
+  animation-delay: var(--d, 0ms);
 }

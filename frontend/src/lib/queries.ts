@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, post } from '@/lib/api'
 import type {
   AgreementReport,
@@ -72,6 +72,17 @@ export const useRanked = (id: string, params: { q?: string; band?: string; flag?
     placeholderData: keepPreviousData,
     // keep polling while the worker is still parsing or scoring
     refetchInterval: (q) => (q.state.data && q.state.data.counts.processing > 0 ? 2000 : false),
+  })
+
+/** Ranked lists for many requisitions at once. Same cache key as an unfiltered `useRanked`, so opening a requisition is instant. */
+export const useAllRanked = (ids: string[], enabled = true) =>
+  useQueries({
+    queries: ids.map((id) => ({
+      queryKey: ['ranked', id, {}],
+      queryFn: () => api<RankedList>(`/api/requisitions/${id}/candidates/`),
+      enabled,
+      staleTime: 15_000,
+    })),
   })
 
 // --- upload
