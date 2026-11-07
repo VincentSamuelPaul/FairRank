@@ -6,17 +6,14 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
-import { EvidenceQuote } from '@/components/ui/evidence-quote'
 import { FairnessPanel } from '@/components/ui/fairness-panel'
 import { Field } from '@/components/ui/field'
 import { GlassPanel, HairlineRule } from '@/components/ui/glass-panel'
 import { Input } from '@/components/ui/input'
 import { PillNav } from '@/components/ui/pill-nav'
-import { ScoreRing } from '@/components/ui/score-ring'
 import { homeFor, useLogin, useMe } from '@/lib/auth'
 import { DEMO_ACCOUNTS, DEMO_MODE, DEMO_PASSWORD } from '@/lib/demo'
 import { useReducedMotion } from '@/lib/motion'
-import type { Band } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const schema = z.object({
@@ -25,79 +22,54 @@ const schema = z.object({
 })
 type Values = z.infer<typeof schema>
 
-/* Synthetic candidates (docs/BRIEF.md sample IDs). Names are hidden while scoring (blind scoring). */
-type Sample =
-  | { id: string; role: string; meta: string; kind: 'scored'; score: number; band: Band; quotes: ({ criterion: string; quote: string } | { criterion: string; none: true })[] }
-  | { id: string; role: string; meta: string; kind: 'review' }
+/* Synthetic evidence samples (docs/BRIEF.md). The last one honestly shows the unsure state: no quote, no score. */
+type Sample = { criterion: string; quote: string | null }
 const SAMPLES: Sample[] = [
-  { id: 'CND-91022', role: 'Senior Java Developer', meta: '6.5 yrs · notice 60 days', kind: 'scored', score: 82, band: 'strong', quotes: [{ criterion: 'Spring Boot', quote: 'Built and maintained 12 Spring Boot microservices' }, { criterion: 'Notice period', quote: 'Notice Period: 60 days' }] },
-  { id: 'CND-91088', role: 'Java Developer', meta: '4 yrs · notice 90 days', kind: 'scored', score: 61, band: 'possible', quotes: [{ criterion: 'Hibernate', quote: 'Tuned Hibernate queries and PostgreSQL indexes' }, { criterion: 'Spring Boot', none: true }] },
-  { id: 'CND-91103', role: 'KYC Analyst', meta: 'scanned PDF', kind: 'review' },
+  { criterion: 'Spring Boot', quote: 'Built and maintained 12 Spring Boot microservices' },
+  { criterion: 'Hibernate', quote: 'Tuned Hibernate queries and PostgreSQL indexes' },
+  { criterion: 'Kubernetes', quote: null },
 ]
-const CYCLE_MS = 7000
+const CYCLE_MS = 8000
+const FADE_MS = 300
 
-/** The sample card choreography: ring fills (900ms), then quotes reveal one after another with a drawn tick (1.2s). */
-function SampleBody({ s }: { s: Sample }) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-start gap-4">
-        {s.kind === 'scored' ? <ScoreRing value={s.score} band={s.band} size="md" stacked ms={900} glow /> : <ScoreRing value={null} state="needs_manual_review" size="md" stacked />}
-        <div className="min-w-0 pt-0.5">
-          <p className="text-micro uppercase text-text-2">{s.id} · scored blind</p>
-          <p className="text-body font-medium">{s.role}</p>
-          <p className="text-small text-text-2">{s.meta}</p>
-        </div>
-      </div>
-      {s.kind === 'scored' ? (
-        s.quotes.map((q, i) =>
-          'none' in q ? (
-            <EvidenceQuote key={q.criterion} criterion={q.criterion} status="no_evidence" reveal={900 + i * 600} />
-          ) : (
-            <EvidenceQuote key={q.criterion} criterion={q.criterion} quote={q.quote} status="verified" reveal={900 + i * 600} />
-          ),
-        )
-      ) : (
-        <p className="proof-in rounded-input border border-dashed px-3 py-2 text-small text-text-2" style={{ '--d': '700ms' } as React.CSSProperties}>
-          No readable text, so no score. Nobody is rejected: a person reads this CV.
-        </p>
-      )}
-    </div>
-  )
-}
-
-function ProofStack() {
+/**
+ * The proof line: ONE evidence quote, no card. On load a wash sweeps over the quote (900ms) and the
+ * "Verified in CV" tick draws. Every 8s it cross-fades (300ms) to the next sample.
+ */
+function ProofLine() {
   const reduced = useReducedMotion()
   const [i, setI] = useState(0)
+  const [fading, setFading] = useState(false)
   const [paused, setPaused] = useState(false)
   useEffect(() => {
     if (reduced || paused) return
-    const t = setInterval(() => setI((n) => (n + 1) % SAMPLES.length), CYCLE_MS)
-    return () => clearInterval(t)
+    let swap: ReturnType<typeof setTimeout>
+    const t = setTimeout(() => {
+      setFading(true)
+      swap = setTimeout(() => { setI((n) => (n + 1) % SAMPLES.length); setFading(false) }, FADE_MS)
+    }, CYCLE_MS)
+    return () => { clearTimeout(t); clearTimeout(swap) }
   }, [reduced, paused, i])
+  const s = SAMPLES[i]
   return (
-    <div className="w-full max-w-sm lg:max-w-md" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
-      <div className="relative">
-        {/* the card behind peeks out below: honesty about uncertainty */}
-        <GlassPanel className="absolute inset-x-4 -bottom-9 top-8 rotate-2 opacity-80" aria-hidden>
-          <p className="absolute inset-x-5 bottom-2.5 flex items-center gap-2 text-micro uppercase text-text-2">
-            <span className="size-3.5 rounded-pill border-2 border-dashed border-text-2" />
-            <span className="max-sm:hidden">CND-91103 · </span>Needs manual review
-          </p>
-        </GlassPanel>
-        <GlassPanel strong rule className="relative -rotate-2 bg-bg-base/55 p-5 pt-6 shadow-float">
-          <SampleBody key={i} s={SAMPLES[i]} />
-        </GlassPanel>
-      </div>
-      <div className="mt-12 flex items-center justify-between pl-1">
-        <p className="text-micro uppercase text-text-2">Live demo · synthetic data</p>
-        <div role="group" aria-label="Sample candidates" className="flex gap-1">
-          {SAMPLES.map((s, n) => (
-            <button key={s.id} type="button" aria-label={`Show sample ${n + 1} of ${SAMPLES.length}`} aria-pressed={i === n} onClick={() => setI(n)} className="grid size-6 place-items-center">
-              <span className={cn('h-1.5 rounded-pill transition-all duration-(--dur-base)', i === n ? 'w-5 bg-text-1' : 'w-1.5 bg-border-strong')} />
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="max-w-2xl space-y-3" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
+      <figure key={i} className={cn('space-y-1.5 transition-opacity duration-300 ease-ui', fading ? 'opacity-0' : 'opacity-100')}>
+        <figcaption className="text-micro uppercase text-text-2">{s.criterion}</figcaption>
+        <blockquote className="text-[20px] leading-snug text-text-1">
+          {s.quote ? <span className="proof-wash">“{s.quote}”</span> : <span className="text-text-2">No evidence found</span>}
+          {s.quote ? (
+            <span className="ml-3 inline-flex items-center gap-1.5 whitespace-nowrap align-middle text-micro uppercase text-text-2">
+              <svg aria-hidden viewBox="0 0 12 12" className="tick size-3 text-ok" style={{ '--d': '900ms' } as React.CSSProperties}>
+                <path d="M2 6.5 5 9.5 10 3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" pathLength={1} />
+              </svg>
+              Verified in CV
+            </span>
+          ) : (
+            <span className="ml-3 inline-flex items-center whitespace-nowrap rounded-pill border border-dashed px-2.5 py-0.5 align-middle text-micro uppercase text-text-2">A person reads this CV</span>
+          )}
+        </blockquote>
+      </figure>
+      <p className="text-micro text-text-2">Live demo, synthetic data</p>
     </div>
   )
 }
@@ -108,7 +80,7 @@ function SignInCard({ form }: { form: UseFormReturn<Values> }) {
   const { register, handleSubmit, setValue, formState: { errors } } = form
   return (
     <GlassPanel strong className="space-y-4 p-5 max-sm:backdrop-blur-none">
-      <h2>Sign in to FairRank</h2>
+      <div className="space-y-1"><h2>Sign in</h2><p className="text-small text-text-2">Use your FairRank account.</p></div>
       <form className="space-y-3.5" noValidate onSubmit={handleSubmit((values) => login.mutate(values, { onSuccess: (u) => navigate(homeFor(u.role), { replace: true }) }))}>
         <Field label="Email" htmlFor="email" error={errors.email?.message}>
           <Input id="email" type="email" autoComplete="username" className="border-border-strong bg-glass-strong" aria-invalid={!!errors.email} {...register('email')} />
@@ -165,20 +137,15 @@ export function LoginPage() {
           <span className="size-9 max-sm:hidden" aria-hidden />
         </header>
 
-        <main className="grid flex-1 gap-8 lg:grid-cols-[1fr_22rem] lg:grid-rows-[auto_1fr] lg:gap-x-12 lg:gap-y-0">
-          <div className="relative z-10 space-y-5 lg:col-start-1 lg:row-start-2 lg:self-end">
-            <h1 className="text-hero">
-              <span className="text-text-1/70">Hiring that shows </span>
-              <span className="text-text-1">its work.</span>
+        <main className="grid flex-1 content-center gap-8 max-lg:gap-10 lg:mt-12 lg:grid-cols-[1fr_24rem] lg:items-center lg:gap-x-16">
+          <div className="relative z-10 space-y-6">
+            <h1 className="text-hero text-text-1">
+              Hiring that shows <span className="draw-underline">its work.</span>
             </h1>
             <p className="max-w-sm text-balance text-small text-text-2">Every score quotes the CV. Low scorers are labelled, never hidden, and nobody is auto-rejected.</p>
+            <ProofLine />
           </div>
-          <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">
-            <SignInCard form={form} />
-          </div>
-          <div className="px-2 pb-10 lg:col-start-1 lg:row-start-1 lg:justify-self-start lg:pb-0 lg:pl-8 lg:pt-4">
-            <ProofStack />
-          </div>
+          <SignInCard form={form} />
         </main>
 
         <footer className="space-y-5">

@@ -161,3 +161,9 @@ The page's primary action is pinned to a bottom bar (solid in the workspace, `St
 - Never put `outline-none` or `outline-hidden` on an element that relies on `focus-visible:outline-*`: in Tailwind v4 both set `--tw-outline-style: none`, so the ring never draws. Use `focus-visible:outline-solid focus-visible:outline-2` (the Button does). Inputs use a signal box-shadow ring instead.
 - Phone tap targets are at least 44px: nav links, tabs, row name links, evidence chips and row actions use `max-md:min-h-11`.
 - `scripts/qa.sh` (74 checks) is the gate. It samples rendered pixels for contrast, walks the keyboard order checking every stop shows a ring, and verifies pinned bars sit at the viewport bottom on a phone.
+
+## 8. Round 3
+### 8.1 Login: proof line instead of a card (replaces 7.5's tilted card)
+- No card, tilt, peeking card or carousel dots. Headline is solid cream on both lines at `text-hero`; "its work." is set apart by a 2px cream@60% underline that draws itself once (`.draw-underline`, 700ms).
+- One **proof line** under the subcopy, left-aligned with the headline: micro-caps criterion label, a 20px quote, a "Verified in CV" tag with a self-drawing tick. On load a `--signal` 18% wash sweeps behind the quote (`.proof-wash`, 900ms), then the tick draws. Every 8s it cross-fades (300ms) to the next of 3 samples; the third honestly shows "No evidence found" with a dashed tag. Paused on hover/focus and under reduced motion. Labelled "Live demo, synthetic data".
+- Sign-in is the only panel: one straight glass card, vertically centred on the headline block. At least 48px between nav pill and content on desktop. The five-point strip is never cropped at 1440x900 or 375x812 (2-column on phone). Phone order: headline, proof line, sign-in, strip.

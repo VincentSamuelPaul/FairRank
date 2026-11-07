@@ -271,6 +271,38 @@ dialog.modal[open] {
   from { stroke-dasharray: 0 100; }
 }
 
+/* Headline emphasis without colour: a 2px cream line draws itself under the last phrase, once (700ms). */
+.draw-underline {
+  position: relative;
+  display: inline-block;
+}
+.draw-underline::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: -0.04em;
+  height: 2px;
+  background: color-mix(in srgb, var(--text-1) 60%, transparent);
+  transform-origin: left;
+  animation: underline-draw 700ms var(--ease) 300ms both;
+}
+@keyframes underline-draw {
+  from { transform: scaleX(0); }
+}
+
+/* Proof line: a soft signal wash sweeps left to right behind the quote (900ms), once. */
+.proof-wash {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--signal) 18%, transparent), color-mix(in srgb, var(--signal) 18%, transparent)) no-repeat left / 100% 100%;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding-inline: 0.2em;
+  margin-inline: -0.2em;
+  animation: proof-wash 900ms var(--ease) both;
+}
+@keyframes proof-wash {
+  from { background-size: 0% 100%; }
+}
+
 .proof-in {
   animation: proof-in 380ms var(--ease) both;
   animation-delay: var(--d, 0ms);
