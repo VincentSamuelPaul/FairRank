@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 export function GlassPanel({ children, strong = false, rule = false, className }: { children: React.ReactNode; strong?: boolean; rule?: boolean; className?: string }) {
   return (
     <div className={cn('relative rounded-card border backdrop-blur-(--blur-glass)', strong ? 'bg-glass-strong' : 'bg-glass', className)}>
-      {rule && <HairlineRule className="absolute inset-x-4 top-0" />}
+      {rule && <HairlineRule className="absolute left-4 right-4 top-0 w-auto" />}
       {children}
     </div>
   )

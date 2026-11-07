@@ -65,7 +65,9 @@ def run(name: str, view: str, page: Page) -> None:
     else:
         raise SystemExit(f"unknown screen: {name}")
     settle(page)
-    full = name in ("components", "ranked", "candidate", "portal", "portal-candidate")
+    full = name != "login" or view == "phone"
+    dims = page.evaluate("[document.documentElement.scrollWidth, innerWidth, document.documentElement.scrollHeight, innerHeight]")
+    print(f"{name}-{view}: scrollW={dims[0]} viewW={dims[1]} scrollH={dims[2]} viewH={dims[3]}" + ("  HORIZONTAL SCROLL" if dims[0] > dims[1] else ""))
     OUT.mkdir(parents=True, exist_ok=True)
     if CLIP:
         x, y, w, h = (float(v) for v in CLIP.split(","))

@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Info, KeyRound, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type UseFormReturn } from 'react-hook-form'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -26,12 +26,12 @@ type Values = z.infer<typeof schema>
 function ProofPanel() {
   return (
     <GlassPanel rule className="space-y-4 p-5 pt-6">
-      <div className="flex items-center gap-4">
-        <ScoreRing value={82} band="strong" size="md" />
+      <div className="flex items-start gap-4">
+        <ScoreRing value={82} band="strong" size="md" stacked />
         <div className="min-w-0">
-          <p className="text-micro uppercase text-text-2">Sample · CND-91022 · name hidden</p>
+          <p className="text-micro uppercase text-text-2">CND-91022 · scored blind</p>
           <p className="text-body font-medium">Senior Java Developer</p>
-          <p className="text-small text-text-2"><span className="tnum">6.5</span> yrs · notice <span className="tnum">60</span> days · Noida</p>
+          <p className="text-small text-text-2"><span className="tnum">6.5</span> yrs · notice <span className="tnum">60</span> days</p>
         </div>
       </div>
       <EvidenceQuote criterion="Spring Boot" quote="Built and maintained 12 Spring Boot microservices" status="verified" />
@@ -40,15 +40,15 @@ function ProofPanel() {
   )
 }
 
-function SignInCard({ showDemo }: { showDemo: boolean }) {
+function SignInCard({ form }: { form: UseFormReturn<Values> }) {
   const login = useLogin()
   const navigate = useNavigate()
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<Values>({ resolver: zodResolver(schema) })
+  const { register, handleSubmit, formState: { errors } } = form
   return (
     <GlassPanel strong className="space-y-5 p-6" >
       <div className="space-y-1">
         <h2>Sign in to FairRank</h2>
-        <p className="text-small text-text-2">Screening with evidence, never auto-rejection.</p>
+        <p className="text-small text-text-2">Recruiters, delivery heads and clients.</p>
       </div>
       <form
         className="space-y-4"
@@ -66,27 +66,6 @@ function SignInCard({ showDemo }: { showDemo: boolean }) {
           {login.isPending ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>
-      {showDemo && (
-        <div className="space-y-2 border-t pt-4">
-          <p className="text-micro uppercase text-text-2">Demo accounts (synthetic)</p>
-          <div className="flex flex-wrap gap-2">
-            {DEMO_ACCOUNTS.map((a) => (
-              <Button
-                key={a.email}
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setValue('email', a.email, { shouldValidate: true })
-                  setValue('password', DEMO_PASSWORD, { shouldValidate: true })
-                }}
-              >
-                {a.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
     </GlassPanel>
   )
 }
@@ -94,7 +73,8 @@ function SignInCard({ showDemo }: { showDemo: boolean }) {
 export function LoginPage() {
   const { data: user } = useMe()
   const [dialog, setDialog] = useState<'screen' | 'privacy' | null>(null)
-  const [demo, setDemo] = useState(true)
+  const [demo, setDemo] = useState(false)
+  const form = useForm<Values>({ resolver: zodResolver(schema) })
   if (user) return <Navigate to={homeFor(user.role)} replace />
 
   return (
@@ -111,22 +91,43 @@ export function LoginPage() {
               { label: 'Privacy', onClick: () => setDialog('privacy') },
             ]}
           />
-          <div className="flex size-9 items-center justify-end">
+          <div className="relative flex h-9 items-center justify-end" onKeyDown={(e) => e.key === 'Escape' && setDemo(false)}>
             {DEMO_ENABLED && (
-              <Button variant="secondary" size="icon-sm" aria-label="Demo accounts" aria-pressed={demo} className="bg-glass" onClick={() => setDemo((d) => !d)}>
-                <KeyRound />
-              </Button>
+              <>
+                <Button variant="secondary" size="sm" aria-label="Demo accounts" aria-expanded={demo} className="bg-glass max-sm:size-9 max-sm:px-0" onClick={() => setDemo((d) => !d)}>
+                  <KeyRound /> <span className="max-sm:hidden">Demo accounts</span>
+                </Button>
+                {demo && (
+                  <GlassPanel strong className="absolute right-0 top-full z-20 mt-2 w-64 space-y-1 bg-surface-2 p-2 shadow-float">
+                    <p className="px-3 pt-2 text-micro uppercase text-text-2">Synthetic accounts</p>
+                    {DEMO_ACCOUNTS.map((a) => (
+                      <button
+                        key={a.email}
+                        type="button"
+                        className="flex min-h-11 w-full items-center rounded-input px-3 text-left text-small hover:bg-glass-strong"
+                        onClick={() => {
+                          form.setValue('email', a.email, { shouldValidate: true })
+                          form.setValue('password', DEMO_PASSWORD, { shouldValidate: true })
+                          setDemo(false)
+                        }}
+                      >
+                        {a.label}
+                      </button>
+                    ))}
+                  </GlassPanel>
+                )}
+              </>
             )}
           </div>
         </header>
 
         <main className="grid flex-1 gap-6 lg:grid-cols-[1fr_26rem] lg:grid-rows-[auto_1fr] lg:gap-x-12">
           <div className="space-y-5 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-end">
-            <h1 className="text-display">Hiring that shows its work.</h1>
-            <p className="max-w-md text-small text-text-2">Every score quotes the CV. Low scorers are labelled, never hidden, and nobody is auto-rejected.</p>
+            <h1 className="text-display text-balance">Hiring that shows its work.</h1>
+            <p className="max-w-sm text-balance text-small text-text-2">Every score quotes the CV. Low scorers are labelled, never hidden, and nobody is auto-rejected.</p>
           </div>
           <div className="lg:col-start-2 lg:row-start-2">
-            <SignInCard showDemo={DEMO_ENABLED && demo} />
+            <SignInCard form={form} />
           </div>
           <div className="lg:col-start-2 lg:row-start-1">
             <ProofPanel />
