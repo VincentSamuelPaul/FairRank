@@ -23,7 +23,7 @@ from ai import offline
 log = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
-TIMEOUT_SECONDS = 45
+TIMEOUT_SECONDS = 120  # Gemini 3.x flash can take 30s+ per call
 MAX_429_RETRIES = 3
 BACKOFF_BASE_SECONDS = 1.0
 
@@ -143,6 +143,7 @@ def _post(provider: str, prompt: str) -> str:
             "response_format": {"type": "json_object"},
             "temperature": 0.1,
         }
+    headers["User-Agent"] = "FairRank/1.0"  # Groq's CDN rejects the default Python-urllib agent (403)
     req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers, method="POST")
     with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:  # noqa: S310 (fixed https hosts)
         payload = json.loads(resp.read())

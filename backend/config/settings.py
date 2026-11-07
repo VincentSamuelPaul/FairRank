@@ -132,6 +132,6 @@ WORKER_BACKOFF_SECONDS = float(env("WORKER_BACKOFF_SECONDS", "5"))  # doubles pe
 # --- LLM (used from Friday): Gemini Flash primary, Groq fallback, chosen by env
 LLM_PROVIDER = env("LLM_PROVIDER", "gemini")
 GEMINI_API_KEY = env("GEMINI_API_KEY")
-GEMINI_MODEL = env("GEMINI_MODEL", "gemini-2.0-flash")  # LLM_PROVIDER=offline needs no key
+GEMINI_MODEL = env("GEMINI_MODEL", "gemini-3.8-flash")  # LLM_PROVIDER=offline needs no key
 GROQ_API_KEY = env("GROQ_API_KEY")
 GROQ_MODEL = env("GROQ_MODEL", "llama-3.3-70b-versatile")
