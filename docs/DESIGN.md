@@ -156,3 +156,8 @@ Numbers count up once on first paint (400ms; 900ms on the login ring). Everythin
 
 ### 7.11 Phone pass (375px)
 The page's primary action is pinned to a bottom bar (solid in the workspace, `StickyBar`): Upload CVs on the ranked list, Submit to client on candidate detail, the decision buttons on the client's candidate page, Sign in on the login. All targets are at least 44px (48px for primary actions), bars add `--safe-bottom` (`viewport-fit=cover`) padding, and nothing scrolls horizontally.
+
+### 7.12 Focus rings and QA rules learned in round 2
+- Never put `outline-none` or `outline-hidden` on an element that relies on `focus-visible:outline-*`: in Tailwind v4 both set `--tw-outline-style: none`, so the ring never draws. Use `focus-visible:outline-solid focus-visible:outline-2` (the Button does). Inputs use a signal box-shadow ring instead.
+- Phone tap targets are at least 44px: nav links, tabs, row name links, evidence chips and row actions use `max-md:min-h-11`.
+- `scripts/qa.sh` (74 checks) is the gate. It samples rendered pixels for contrast, walks the keyboard order checking every stop shows a ring, and verifies pinned bars sit at the viewport bottom on a phone.

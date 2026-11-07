@@ -29,6 +29,8 @@ interface Props {
   size?: keyof typeof SIZE
   /** Word under the ring instead of beside it (ranked list left column). */
   stacked?: boolean
+  /** Word under the ring from the md breakpoint up, beside it on a phone (ranked rows). */
+  stackedMd?: boolean
   /** Soft glow behind the ring in the band colour (12%, 24px blur). */
   glow?: boolean
   /** Fill animation length in ms (default 400). The login demo uses 900. */
@@ -40,10 +42,10 @@ interface Props {
  * 0 to 100 with the number centred and the band word beside it, so colour is never the only signal.
  * Without a score it shows a dashed ring and the reason: never a made-up number.
  */
-export function ScoreRing({ value = null, band = null, state = 'scored', size = 'md', stacked = false, glow = false, ms = 400, className }: Props) {
+export function ScoreRing({ value = null, band = null, state = 'scored', size = 'md', stacked = false, stackedMd = false, glow = false, ms = 400, className }: Props) {
   const shown = useCountUp(Math.round(value ?? 0), ms)
   const scored = state === 'scored' && value !== null
-  const layout = cn('inline-flex items-center gap-3', stacked && 'flex-col gap-1.5 text-center', className)
+  const layout = cn('inline-flex items-center gap-3', stacked && 'flex-col gap-1.5 text-center', stackedMd && 'md:flex-col md:gap-1.5 md:text-center', className)
   if (!scored) {
     const s = NO_SCORE[state] ?? NO_SCORE.pending
     return (

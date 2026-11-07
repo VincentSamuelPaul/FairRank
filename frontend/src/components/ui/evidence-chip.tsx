@@ -12,7 +12,7 @@ export function EvidenceChip({ criterion, quote, unverified = false }: { criteri
       onClick={() => setOpen((o) => !o)}
       className={cn(
         'group/chip min-w-0 text-left transition-[background-color,border-color] duration-(--dur-fast) hover:border-border-strong hover:bg-surface-2',
-        open ? 'rounded-card border bg-surface-2 p-3 md:col-span-2' : 'flex w-full items-center gap-2 rounded-pill border bg-surface-panel py-1.5 pl-2.5 pr-3.5',
+        open ? 'rounded-card border bg-surface-2 p-3 md:col-span-2' : 'flex w-full items-center gap-2 rounded-pill border bg-surface-panel py-1.5 pl-2.5 pr-3.5 max-md:min-h-11',
       )}
     >
       {open ? (

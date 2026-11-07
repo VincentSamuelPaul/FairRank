@@ -11,7 +11,7 @@ const danger = 'border-border-strong bg-transparent text-bad hover:bg-surface-2'
 
 /** Primary = cream filled pill. Secondary = bordered pill. Ghost = text. Danger = bordered, status colour. */
 const variants = cva(
-  'group/button inline-flex shrink-0 select-none items-center justify-center rounded-pill border border-transparent text-small font-medium whitespace-nowrap transition-[background-color,color,transform] duration-(--dur-fast) ease-ui outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-bad [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
+  'group/button inline-flex shrink-0 select-none items-center justify-center rounded-pill border border-transparent text-small font-medium whitespace-nowrap transition-[background-color,color,transform] duration-(--dur-fast) ease-ui focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-bad [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
   {
     variants: {
       variant: {

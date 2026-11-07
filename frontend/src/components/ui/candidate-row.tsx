@@ -31,25 +31,25 @@ function Actions({ row, a, uploadTo }: { row: Row; a: RowActions; uploadTo: stri
   const code = row.next_action.code
   const open = `/candidates/${row.id}`
   const openBtn = (primary: boolean) => (
-    <Link to={open} className={buttonVariants({ variant: primary ? 'primary' : 'ghost', className: 'group/button w-full md:w-auto' })}>
+    <Link to={open} className={buttonVariants({ variant: primary ? 'primary' : 'ghost', className: 'group/button w-full max-md:min-h-11 md:w-auto' })}>
       Open CV
       <ArrowRight className="size-4 transition-transform duration-(--dur-fast) ease-ui group-hover/button:translate-x-0.5" aria-hidden />
     </Link>
   )
   const col = 'flex w-full flex-col gap-1.5 md:w-auto md:items-end'
   if (code === 'wait') return <p className="text-small text-text-2">{row.next_action.label}</p>
-  if (code === 'fix_file') return <div className={col}><Link to={uploadTo} className={buttonVariants({ className: 'w-full md:w-auto' })}>{row.next_action.label}</Link></div>
+  if (code === 'fix_file') return <div className={col}><Link to={uploadTo} className={buttonVariants({ className: 'w-full max-md:min-h-11 md:w-auto' })}>{row.next_action.label}</Link></div>
   if (code === 'retry')
     return (
       <div className={col}>
-        <Button className="w-full md:w-auto" disabled={a.busy} loading={a.busy} onClick={a.onRetry}>{a.busy ? 'Queued' : row.next_action.label}</Button>
+        <Button className="w-full max-md:min-h-11 md:w-auto" disabled={a.busy} loading={a.busy} onClick={a.onRetry}>{a.busy ? 'Queued' : row.next_action.label}</Button>
         {openBtn(false)}
       </div>
     )
   if (code === 'submit' && a.canAct)
     return (
       <div className={col}>
-        <Button arrow className="w-full md:w-auto" loading={a.busy} disabled={a.busy} onClick={a.onSubmit}>{a.busy ? 'Submitting' : 'Submit to client'}</Button>
+        <Button arrow className="w-full max-md:min-h-11 md:w-auto" loading={a.busy} disabled={a.busy} onClick={a.onSubmit}>{a.busy ? 'Submitting' : 'Submit to client'}</Button>
         {openBtn(false)}
       </div>
     )
@@ -57,7 +57,7 @@ function Actions({ row, a, uploadTo }: { row: Row; a: RowActions; uploadTo: stri
     return (
       <div className={col}>
         {openBtn(true)}
-        <Button variant="ghost" size="sm" disabled disabledReason={NOT_OPENED} className="w-full md:w-auto">Submit to client</Button>
+        <Button variant="ghost" size="sm" disabled disabledReason={NOT_OPENED} className="w-full max-md:min-h-11 md:w-auto">Submit to client</Button>
       </div>
     )
   return <div className={col}>{openBtn(code === 'open')}</div>
@@ -83,16 +83,16 @@ export function CandidateRow({ row, rank, actions, uploadTo = 'upload' }: { row:
   const meta = [row.current_role, years(row.experience_years), `notice ${notice(row.notice_days)}`, row.location].filter(Boolean).join(' · ')
   const scored = row.score.state === 'scored'
   return (
-    <li className="surface-card relative grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 overflow-hidden rounded-card border p-4 pl-5 md:grid-cols-[7rem_1fr_11rem] md:gap-x-6 md:p-5 md:pl-6">
+    <li className="surface-card relative grid grid-cols-1 gap-y-3 overflow-hidden rounded-card border p-4 pl-5 md:grid-cols-[7rem_1fr_11rem] md:gap-x-6 md:p-5 md:pl-6">
       <span aria-hidden className={cn('absolute inset-y-0 left-0 w-(--stripe)', stripe(row))} />
-      <div className="flex flex-col items-center gap-1.5 md:row-span-2">
+      <div className="flex items-center gap-3 md:flex-col md:gap-1.5 md:row-span-2">
         <span className="tnum text-h1 text-text-3" aria-label={rank ? `Rank ${rank}` : 'Not ranked'}>{rank ?? '–'}</span>
-        <ScoreRing value={row.score.total} band={row.score.band} state={row.score.state} stacked glow />
+        <ScoreRing value={row.score.total} band={row.score.band} state={row.score.state} stackedMd glow />
       </div>
 
       <div className="min-w-0 space-y-1 md:col-start-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <Link to={`/candidates/${row.id}`} className="truncate text-h2 hover:underline md:text-h1">{name}</Link>
+          <Link to={`/candidates/${row.id}`} className="inline-flex max-md:min-h-11 items-center truncate text-h2 hover:underline md:text-h1">{name}</Link>
           <StageChip stage={row.stage} />
           {row.duplicate_of && <StatusChip tone="warn">Duplicate</StatusChip>}
           {row.score.state === 'needs_manual_review' && <StatusChip tone="info">Needs review</StatusChip>}
@@ -102,7 +102,7 @@ export function CandidateRow({ row, rank, actions, uploadTo = 'upload' }: { row:
         {row.duplicate_of && <p className="text-small text-text-2">Possible duplicate of {row.duplicate_of.external_id || row.duplicate_of.full_name || 'another record'}.</p>}
       </div>
 
-      <div className="col-span-2 min-w-0 space-y-3 md:col-span-1 md:col-start-2">
+      <div className="min-w-0 space-y-3 md:col-start-2">
         {top.length > 0 && (
           <div className="grid gap-2 md:grid-cols-2">
             {top.map((c) => <EvidenceChip key={c.criterion_id} criterion={c.name} quote={c.quote} unverified={c.unverified} />)}
@@ -116,7 +116,7 @@ export function CandidateRow({ row, rank, actions, uploadTo = 'upload' }: { row:
         {row.score.state === 'cv_failed' && <p className="text-small text-bad">{row.cv_note || row.score.error}</p>}
       </div>
 
-      <div className="col-span-2 flex md:col-span-1 md:col-start-3 md:row-span-2 md:row-start-1 md:justify-end">
+      <div className="flex md:col-start-3 md:row-span-2 md:row-start-1 md:justify-end">
         <Actions row={row} a={actions} uploadTo={uploadTo} />
       </div>
     </li>

@@ -2,6 +2,7 @@
 
     scripts/qa.sh            (needs `docker compose up`; demo accounts are synthetic, see deployment.md)
 """
+import json
 import os
 import re
 import sys
@@ -75,13 +76,19 @@ def ratio(a, b) -> float:
 
 TEXT_JS = """() => {
   const out = [], seen = new Set();
-  for (const el of document.querySelectorAll('body *')) {
+  document.querySelectorAll('[data-qa]').forEach(e => e.removeAttribute('data-qa'));
+  // read colours as sRGB through a canvas: handles color-mix()/oklab results that getComputedStyle returns as color(...)
+  const cv = document.createElement('canvas').getContext('2d', {willReadFrequently: true});
+  const rgba = (css) => { cv.clearRect(0, 0, 1, 1); cv.fillStyle = '#000'; cv.fillStyle = css; cv.fillRect(0, 0, 1, 1); const d = cv.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+  // when a dialog is open, only the dialog is on screen (the page behind it is dimmed and inert)
+  const root = document.querySelector('dialog[open]') || document.body;
+  for (const el of root.querySelectorAll('*')) {
     const own = [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim()).map(n => n.textContent.trim()).join(' ');
     if (!own) continue;
     const cs = getComputedStyle(el), r = el.getBoundingClientRect();
     if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0 || r.width < 2 || r.height < 2) continue;
     if (el.closest('[aria-hidden="true"]') || el.closest('[disabled]')) continue;
-    const m = cs.color.match(/[\\d.]+/g).map(Number);
+    const m = rgba(cs.color);
     const key = cs.color + cs.fontSize + Math.round(r.top / 40) + el.className;
     if (seen.has(key)) continue; seen.add(key);
     const id = out.length; el.setAttribute('data-qa', id);
@@ -107,17 +114,19 @@ def contrast_page(page: Page, label: str, limit: int = 70) -> None:
         # glyph ink gives a low ratio and a point outside a pill gives the wrong surface, so the best ratio is the real one.
         vh = page.viewport_size["height"]
         mid = it["top"] + it["h"] / 2
-        pts = [(it["left"] - 1, mid), (it["left"] + 3, mid), (it["left"] + 2, it["top"] + 1), (it["left"] + 2, it["top"] + it["h"] - 2)]
+        pts = [(it["left"] - 1, mid), (it["left"] + 3, mid), (it["left"] + 2, it["top"] + 1), (it["left"] + 2, it["top"] + it["h"] - 2), (it["left"] + it["h"] / 2, mid)]
         pts = [(max(x, 0), y_) for x, y_ in pts if 0 <= y_ < vh - 1]
         if not pts:
             continue
         a = it["color"][3] if len(it["color"]) > 3 else 1.0
         best = 0.0
+        seen_bg = []
         for x_, y_ in pts:
             try:
                 bg = pixel(page, x_, y_)
             except Exception:
                 continue
+            seen_bg.append(bg)
             fg = tuple(it["color"][i] * a + bg[i] * (1 - a) for i in range(3))
             best = max(best, ratio(fg, bg))
         r = best
@@ -125,7 +134,7 @@ def contrast_page(page: Page, label: str, limit: int = 70) -> None:
         need = 3.0 if large else 4.5
         worst = min(worst, r / need * 4.5)
         if r < need:
-            bad.append(f"{it['text']!r} {r:.2f}<{need}")
+            bad.append(f"{it['text']!r} {r:.2f}<{need} fg={it['color']} bg={seen_bg}")
     page.evaluate("window.scrollTo(0, 0)")
     check(not bad, f"contrast >= 4.5 on rendered pixels: {label}", f"{len(items)} text runs" + (f"; {'; '.join(bad[:5])}" if bad else ""))
 
@@ -174,12 +183,20 @@ def main() -> int:
                 ("ranked", RECRUITER, lambda pg: open_ranked(pg)),
                 ("candidate", RECRUITER, lambda pg: (open_ranked(pg), pg.locator("ul > li a[href^='/candidates/']").first.click(), pg.wait_for_selector("pre", state="attached"))),
                 ("portal", CLIENT, lambda pg: pg.goto(f"{BASE}/portal")),
+                ("requisitions", RECRUITER, lambda pg: (pg.goto(f"{BASE}/requisitions"), pg.wait_for_selector("ul > li a[href^='/requisitions/']"))),
+                ("scorecard", RECRUITER, lambda pg: (open_ranked(pg), pg.get_by_role("link", name="Scorecard").click(), pg.wait_for_selector("text=Scoring criteria"))),
+                ("upload", RECRUITER, lambda pg: (open_ranked(pg), pg.get_by_role("link", name="Upload CVs", exact=True).click(), pg.wait_for_selector("text=Drop PDF or DOCX CVs here"))),
             ]:
                 c, pg = ctx(w, h, email)
                 steps(pg)
                 settle(pg)
                 sw = pg.evaluate("document.documentElement.scrollWidth")
-                check(sw <= w, f"no horizontal scroll: {who} @ {label}px", f"scrollWidth={sw}")
+                wide = pg.evaluate("""(w) => [...document.querySelectorAll('body *')].filter(e => {
+                    if (e.getBoundingClientRect().right <= w + 0.5 || e.closest('[aria-hidden=true]')) return false;
+                    for (let p = e.parentElement; p; p = p.parentElement) { const o = getComputedStyle(p).overflowX; if (o === 'auto' || o === 'scroll' || o === 'hidden') return false; }
+                    return true;
+                }).length""", w)
+                check(sw <= w and wide == 0, f"no horizontal scroll: {who} @ {label}px", f"scrollWidth={sw}, elements wider than the viewport={wide}")
                 c.close()
 
         # 2. states (loading skeleton, empty, error) on the ranked list
@@ -219,13 +236,16 @@ def main() -> int:
         pg.goto(f"{BASE}/login")
         settle(pg)
         order = []
+        rings = []
         for _ in range(9):
             pg.keyboard.press("Tab")
             order.append(pg.evaluate("(() => { const e = document.activeElement; return (e.getAttribute('aria-label') || e.innerText || e.id || e.tagName).trim().slice(0, 22); })()"))
-        ring = pg.evaluate("(() => { const e = document.activeElement; const s = getComputedStyle(e); return s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0; })()")
-        expected = ["How we screen", "Privacy", "Demo accounts", "email", "password", "Sign in"]
-        check(order[:6] == expected, "keyboard: tab order follows the visual order (nav, demo, email, password, sign in)", " > ".join(order[:6]))
-        check(bool(ring), "keyboard: focused control has a visible focus ring")
+            pg.wait_for_timeout(300)
+            rings.append(pg.evaluate("(() => { const e = document.activeElement; if (e === document.body) return true; const s = getComputedStyle(e); return (s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0) || s.boxShadow !== 'none'; })()"))
+        ring = all(rings)
+        expected = ["How we screen", "Privacy", "email", "password", "Sign in"]
+        check(order[:5] == expected, "keyboard: tab order follows the visual order (nav, email, password, sign in)", " > ".join(order[:5]))
+        check(bool(ring), "keyboard: every focused control has a visible focus ring", f"{sum(rings)}/{len(rings)}; no ring: {[o for o, r in zip(order, rings) if not r]}")
         pg.get_by_role("button", name="How we screen").click()
         check(pg.get_by_role("dialog").is_visible(), "dead-button check: How we screen opens a dialog")
         pg.keyboard.press("Escape")
@@ -235,10 +255,9 @@ def main() -> int:
         check(pg.get_by_role("dialog").is_visible(), "dead-button check: Privacy opens a dialog")
         pg.keyboard.press("Escape")
         pg.wait_for_timeout(250)
-        pg.get_by_role("button", name="Demo accounts").click()
-        pg.get_by_role("button", name="Recruiter").click()
+        pg.get_by_role("button", name="Recruiter", exact=True).click()
         filled = pg.get_by_label("Email").input_value() == RECRUITER and pg.get_by_label("Password").input_value() != ""
-        check(filled, "dead-button check: Demo accounts fills the sign-in form")
+        check(filled, "dead-button check: the Recruiter quick-fill chip fills the sign-in form")
         pg.get_by_role("button", name="Sign in", exact=True).click()
         pg.wait_for_url(lambda u: "/login" not in u)
         check("/requisitions" in pg.url, "dead-button check: Sign in lands the recruiter on Requisitions", pg.url.replace(BASE, ""))
@@ -307,6 +326,143 @@ def main() -> int:
         settle(pg)
         contrast_page(pg, "login @375")
         c.close()
+        # ---- round 2: command palette, listbox, upload states, stage hues, phone bars, tap targets ----
+        c, pg = ctx(1440, 900, RECRUITER)
+        pg.goto(f"{BASE}/requisitions")
+        settle(pg)
+        pg.keyboard.press("Control+k")
+        check(pg.get_by_role("dialog", name="Command palette").is_visible(), "command palette opens with Ctrl+K")
+        pg.get_by_label("Search requisitions and candidates").fill("Ritika")
+        try:
+            pg.get_by_role("option", name=re.compile("Ritika")).first.wait_for(timeout=8000)
+            pg.keyboard.press("Enter")
+            pg.wait_for_url(re.compile("/candidates/"))
+            check(True, "command palette finds a candidate and Enter opens it", pg.url.replace(BASE, "")[:28])
+        except Exception:
+            check(False, "command palette finds a candidate and Enter opens it")
+        pg.goto(f"{BASE}/requisitions")
+        settle(pg)
+        pg.keyboard.press("Control+k")
+        pg.get_by_role("option", name=re.compile("New requisition")).first.click()
+        try:
+            pg.wait_for_selector("dialog[open] #client_org", timeout=5000)
+            check(True, "command palette action 'New requisition' opens the dialog")
+        except Exception:
+            check(False, "command palette action 'New requisition' opens the dialog")
+        box = pg.get_by_role("combobox", name=re.compile("")).first
+        pg.locator("#client_org").focus()
+        pg.keyboard.press("ArrowDown")
+        pg.keyboard.press("ArrowDown")
+        pg.keyboard.press("Enter")
+        picked = pg.locator("#client_org").inner_text().strip()
+        check(bool(picked) and "Select a client" not in picked, "listbox is keyboard operable (arrows + Enter pick a client)", picked.replace("\n", " ")[:30])
+        pg.keyboard.press("Escape")
+        pg.wait_for_timeout(250)
+        c.close()
+
+        c, pg = ctx(1440, 900, RECRUITER)
+        pg.goto(f"{BASE}/requisitions")
+        settle(pg)
+        pg.wait_for_selector("ul > li a[href^='/requisitions/']")
+        cards = pg.locator("ul > li a[href^='/requisitions/']").count()
+        has = pg.evaluate("""() => [...document.querySelectorAll('ul > li a[href^="/requisitions/"]')].filter(a => a.querySelector('[role=img]')).length""")
+        check(cards >= 4 and has >= 3, "requisition cards show distribution bar and pipeline progress", f"{cards} cards, {has} with bars")
+        c.close()
+
+        c, pg = ctx(1440, 900, RECRUITER)
+        pg.goto(f"{BASE}/requisitions")
+        settle(pg)
+        open_ranked(pg)
+        hues = pg.evaluate("""() => {
+          const m = {};
+          for (const el of document.querySelectorAll('li span.uppercase')) {
+            const label = el.textContent.trim();
+            const dot = el.querySelector('span[aria-hidden]');
+            if (!dot || !['SOURCED','SCREENED','SUBMITTED','SHORTLISTED','INTERVIEW','OFFERED','JOINED','REJECTED'].includes(label.toUpperCase())) continue;
+            m[label] = getComputedStyle(dot).backgroundColor;
+          }
+          return m;
+        }""")
+        check(len(set(hues.values())) == len(hues) and len(hues) >= 4, "each pipeline stage shown has its own hue (and its label)", ", ".join(sorted(hues)))
+        stripes = pg.evaluate("""() => [...document.querySelectorAll('li > span[aria-hidden]')].map(e => getComputedStyle(e).backgroundImage !== 'none' || getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)').filter(Boolean).length""")
+        check(stripes >= 10, "ranked rows carry a band stripe", f"{stripes} stripes")
+        pg.locator("li button[aria-expanded]").first.click()
+        check(pg.locator("li button[aria-expanded='true']").count() == 1, "evidence chip expands on click")
+        c.close()
+
+        # upload: states with the API mocked (nothing is written to the database)
+        c, pg = ctx(1440, 900, RECRUITER)
+        open_ranked(pg)
+        pg.get_by_role("link", name="Upload CVs", exact=True).click()
+        pg.wait_for_selector("text=Drop PDF or DOCX CVs here")
+        drag = pg.locator("[data-drag]").first
+        pg.evaluate("document.querySelector('[data-drag]').dispatchEvent(new DragEvent('dragover', {bubbles: true, cancelable: true, dataTransfer: new DataTransfer()}))")
+        check(drag.get_attribute("data-drag") == "true", "drop zone reacts to a drag-over (animated dashed border)")
+        names = ["a.pdf", "b.docx", "c.pdf", "d.pdf"]
+        ids = [f"00000000-0000-0000-0000-00000000000{i}" for i in range(4)]
+        base = {"note": "", "full_name": "", "band": None, "total": None}
+        items = [
+            {**base, "candidate_id": ids[0], "name": names[0], "cv_status": "parsed", "score_state": "scored", "band": "strong", "total": 90},
+            {**base, "candidate_id": ids[1], "name": names[1], "cv_status": "parsed", "score_state": "pending"},
+            {**base, "candidate_id": ids[2], "name": names[2], "cv_status": "needs_review", "score_state": "needs_manual_review"},
+            {**base, "candidate_id": ids[3], "name": names[3], "cv_status": "parsed", "score_state": "failed"},
+        ]
+        def mock(route):
+            body = ({"accepted": [{"candidate_id": i, "name": n} for i, n in zip(ids, names)], "rejected": [{"name": "bad.pdf", "reason": "Not a real PDF"}]}
+                    if route.request.method == "POST" else {"items": items, "in_progress": True})
+            route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
+        pg.route("**/api/requisitions/*/uploads/**", mock)
+        files = [{"name": n, "mimeType": "application/pdf", "buffer": b"%PDF-1.4"} for n in names + ["bad.pdf"]]
+        pg.set_input_files("input[type=file]", files)
+        check(not pg.get_by_role("button", name=re.compile("^Upload \\d+ file")).is_enabled(), "Upload stays disabled until consent is ticked")
+        pg.locator("input[type=checkbox]").check()
+        pg.get_by_role("button", name=re.compile("^Upload \\d+ file")).click()
+        pg.wait_for_selector("text=Processing")
+        bars = pg.get_by_role("progressbar").count()
+        retries = pg.get_by_role("button", name="Retry").count()
+        check(bars >= 6, "every file row has its own progress bar", f"{bars} progress bars")
+        check(retries == 2, "Retry is offered for the rejected file and the scoring failure only", f"{retries} Retry buttons")
+        check(pg.get_by_text("Needs review", exact=True).count() >= 1, "scanned PDF row says Needs review (not rejected)")
+        c.close()
+
+        # phone: pinned primary actions and tap targets
+        c, pg = ctx(375, 812, RECRUITER)
+        open_ranked(pg)
+        fixed = pg.evaluate("""() => { const a = document.querySelector('a[aria-label="Upload CVs to this requisition"]'); if (!a) return null; let e = a; while (e && getComputedStyle(e).position !== 'fixed') e = e.parentElement; if (!e) return null; const r = e.getBoundingClientRect(); return {bottom: Math.round(r.bottom), vh: innerHeight, h: Math.round(r.height)}; }""")
+        check(bool(fixed) and abs(fixed["bottom"] - fixed["vh"]) <= 1, "ranked list pins Upload CVs to the bottom edge on a phone", str(fixed))
+        small = pg.evaluate("""() => [...document.querySelectorAll('main button, main a[href], header a[href], header button')].filter(e => { const r = e.getBoundingClientRect(); const st = getComputedStyle(e); return r.width > 0 && r.height > 0 && st.visibility !== 'hidden' && r.height < 43.5 && (e.innerText.trim() || e.getAttribute('aria-label')) && !e.closest('[aria-hidden=true]') && !e.closest('[hidden]'); }).map(e => (e.getAttribute('aria-label') || e.innerText.trim()).slice(0, 22) + ' ' + Math.round(e.getBoundingClientRect().height)).slice(0, 8)""")
+        check(not small, "tap targets on the ranked list are >= 44px on a phone", "; ".join(small))
+        c.close()
+        c, pg = ctx(375, 812)
+        pg.goto(f"{BASE}/login")
+        settle(pg)
+        fixed = pg.evaluate("""() => { const b = [...document.querySelectorAll('button')].find(x => x.innerText.trim() === 'Sign in'); let e = b; while (e && getComputedStyle(e).position !== 'fixed') e = e.parentElement; if (!e) return null; const r = e.getBoundingClientRect(); return {bottom: Math.round(r.bottom), vh: innerHeight}; }""")
+        check(bool(fixed) and abs(fixed["bottom"] - fixed["vh"]) <= 1, "login pins Sign in to the bottom edge on a phone", str(fixed))
+        c.close()
+
+        c, pg = ctx(1440, 900, RECRUITER)
+        pg.goto(f"{BASE}/requisitions")
+        settle(pg)
+        pg.wait_for_selector("ul > li a[href^='/requisitions/']")
+        pg.wait_for_timeout(900)
+        contrast_page(pg, "requisitions @1440")
+        check(not nameless(pg), "icon-only controls have accessible names: requisitions")
+        bad = not_tabular(pg)
+        check(not bad, "numbers use tabular figures: requisitions", ", ".join(bad))
+        pg.get_by_role("button", name="New requisition").first.click()
+        pg.wait_for_selector("dialog[open]")
+        pg.wait_for_timeout(900)
+        contrast_page(pg, "new-requisition dialog @1440")
+        c.close()
+        c, pg = ctx(1440, 900, RECRUITER)
+        open_ranked(pg)
+        pg.get_by_role("link", name="Scorecard").click()
+        pg.wait_for_selector("text=Scoring criteria")
+        settle(pg)
+        contrast_page(pg, "scorecard @1440")
+        check(not nameless(pg), "icon-only controls have accessible names: scorecard")
+        c.close()
+
         browser.close()
 
     fails = [r for r in results if not r[0]]

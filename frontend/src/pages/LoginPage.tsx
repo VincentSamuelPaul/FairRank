@@ -75,16 +75,16 @@ function ProofStack() {
     return () => clearInterval(t)
   }, [reduced, paused, i])
   return (
-    <div className="w-full max-w-sm" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
+    <div className="w-full max-w-sm lg:max-w-md" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
       <div className="relative">
         {/* the card behind peeks out below: honesty about uncertainty */}
         <GlassPanel className="absolute inset-x-4 -bottom-9 top-8 rotate-2 opacity-80" aria-hidden>
           <p className="absolute inset-x-5 bottom-2.5 flex items-center gap-2 text-micro uppercase text-text-2">
             <span className="size-3.5 rounded-pill border-2 border-dashed border-text-2" />
-            CND-91103 · Needs manual review
+            <span className="max-sm:hidden">CND-91103 · </span>Needs manual review
           </p>
         </GlassPanel>
-        <GlassPanel strong rule className="relative -rotate-2 p-5 pt-6 shadow-float">
+        <GlassPanel strong rule className="relative -rotate-2 bg-bg-base/55 p-5 pt-6 shadow-float">
           <SampleBody key={i} s={SAMPLES[i]} />
         </GlassPanel>
       </div>
@@ -107,7 +107,7 @@ function SignInCard({ form }: { form: UseFormReturn<Values> }) {
   const navigate = useNavigate()
   const { register, handleSubmit, setValue, formState: { errors } } = form
   return (
-    <GlassPanel strong className="space-y-4 p-5">
+    <GlassPanel strong className="space-y-4 p-5 max-sm:backdrop-blur-none">
       <h2>Sign in to FairRank</h2>
       <form className="space-y-3.5" noValidate onSubmit={handleSubmit((values) => login.mutate(values, { onSuccess: (u) => navigate(homeFor(u.role), { replace: true }) }))}>
         <Field label="Email" htmlFor="email" error={errors.email?.message}>
@@ -176,7 +176,7 @@ export function LoginPage() {
           <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">
             <SignInCard form={form} />
           </div>
-          <div className="px-2 pb-10 lg:col-start-1 lg:row-start-1 lg:justify-self-center lg:pb-0 lg:pt-4">
+          <div className="px-2 pb-10 lg:col-start-1 lg:row-start-1 lg:justify-self-start lg:pb-0 lg:pl-8 lg:pt-4">
             <ProofStack />
           </div>
         </main>

@@ -44,8 +44,8 @@ function Details({ req, editable }: { req: Requisition; editable: boolean }) {
       ctc_max_lpa: req.ctc_max !== null ? req.ctc_max / 100000 : '',
     },
   })
-  const field = (name: keyof DetailsIn, label: string, props: React.ComponentProps<'input'> = {}) => (
-    <div className="space-y-1.5">
+  const field = (name: keyof DetailsIn, label: string, props: React.ComponentProps<'input'> = {}, wide = false) => (
+    <div className={wide ? 'col-span-2 space-y-1.5 sm:col-span-1' : 'space-y-1.5'}>
       <Label htmlFor={name}>{label}</Label>
       <Input id={name} inputMode="decimal" disabled={!editable} aria-invalid={!!errors[name]} {...register(name)} {...props} />
       <FieldError message={errors[name]?.message as string | undefined} />
@@ -69,8 +69,8 @@ function Details({ req, editable }: { req: Requisition; editable: boolean }) {
         ),
       )}
     >
-      <div className="grid gap-4 sm:grid-cols-3">
-        {field('location', 'Location')}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {field('location', 'Location', {}, true)}
         {field('exp_min_years', 'Experience min (years)')}
         {field('exp_max_years', 'Experience max (years)')}
         {field('notice_max_days', 'Notice up to (days)')}

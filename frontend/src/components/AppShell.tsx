@@ -42,7 +42,7 @@ function UserMenu({ user }: { user: User }) {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="grid size-10 place-items-center rounded-pill border border-border-strong bg-surface-2 text-small font-medium transition-colors duration-(--dur-fast) hover:bg-surface-1"
+        className="grid size-11 place-items-center rounded-pill border border-border-strong bg-surface-2 text-small font-medium transition-colors duration-(--dur-fast) hover:bg-surface-1"
       >
         {initials(user.full_name)}
       </button>
@@ -88,7 +88,7 @@ export function AppShell({ children, narrow = false, extra }: { children: React.
       <header className="sticky top-0 z-20 h-(--header-h) bg-ws">
         <div className={cn('mx-auto flex h-full items-center justify-between gap-3 px-(--gutter)', wrap)}>
           <div className="flex h-full items-center gap-6">
-            <Link to="/" className="flex items-center gap-2 text-body font-medium tracking-tight">
+            <Link to="/" className="flex min-h-11 items-center gap-2 text-body font-medium tracking-tight">
               <svg aria-hidden viewBox="0 0 24 24" className="size-5 text-text-1" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3 4 6v6c0 4.5 3.2 7.8 8 9 4.8-1.2 8-4.5 8-9V6l-8-3Z" />
                 <path d="m8.5 12 2.5 2.5 4.5-5" />
@@ -117,7 +117,7 @@ export function AppShell({ children, narrow = false, extra }: { children: React.
                 type="button"
                 onClick={() => setPalette(true)}
                 aria-label="Search (Ctrl K)"
-                className="flex h-10 items-center gap-2 rounded-pill border border-border-strong px-3.5 text-small text-text-2 transition-colors duration-(--dur-fast) hover:bg-surface-2 hover:text-text-1"
+                className="flex h-11 items-center gap-2 rounded-pill border border-border-strong px-3.5 text-small text-text-2 transition-colors duration-(--dur-fast) hover:bg-surface-2 hover:text-text-1"
               >
                 <Search className="size-4" aria-hidden />
                 <span className="max-md:hidden">Search</span>
@@ -153,7 +153,7 @@ export function PageHeader({
   return (
     <div className="mb-6 space-y-2">
       {back && (
-        <Link to={back.to} className="inline-flex items-center gap-1 text-small text-text-2 hover:text-text-1">
+        <Link to={back.to} className="inline-flex min-h-11 items-center gap-1 text-small text-text-2 hover:text-text-1">
           <ArrowLeft className="size-3.5" aria-hidden /> {back.label}
         </Link>
       )}

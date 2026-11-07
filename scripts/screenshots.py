@@ -125,6 +125,9 @@ def run(name: str, view: str, page: Page) -> None:
     if wide:
         print(f"  WIDER THAN {designed}px:", wide)
     OUT.mkdir(parents=True, exist_ok=True)
+    if name == "login" and view == "phone" and not CLIP:
+        page.screenshot(path=str(OUT / "login-phone-fold.png"))  # what a phone actually shows first (the pinned Sign in bar is fixed)
+        print("wrote", OUT / "login-phone-fold.png")
     if CLIP:
         x, y, w, h = (float(v) for v in CLIP.split(","))
         path = OUT / f"{name}-{view}-clip.png"
