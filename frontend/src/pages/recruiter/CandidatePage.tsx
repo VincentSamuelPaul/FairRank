@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Copy, ExternalLink, Eye, FileText, ScanLine, Send, ShieldCheck, Trash2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { z } from 'zod'
@@ -24,7 +24,7 @@ import { useCandidate, useCandidateActions } from '@/lib/queries'
 import type { CandidateDetail, CriterionScore, Stage } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-function Highlighted({ text, criteria, activeId }: { text: string; criteria: CriterionScore[]; activeId: number | null }) {
+function Highlighted({ text, criteria, activeId, pulse }: { text: string; criteria: CriterionScore[]; activeId: number | null; pulse: number }) {
   const parts = useMemo(() => {
     const spans = criteria
       .filter((c) => c.span)
@@ -45,7 +45,7 @@ function Highlighted({ text, criteria, activeId }: { text: string; criteria: Cri
     <>
       {parts.map((p, i) =>
         p.id ? (
-          <mark key={i} id={`ev-${p.id}`} className="evidence" data-active={activeId === p.id}>
+          <mark key={activeId === p.id ? `${i}-${pulse}` : i} id={`ev-${p.id}`} className={cn('evidence', activeId === p.id && pulse > 0 && 'pulse')} data-active={activeId === p.id}>
             {p.text}
           </mark>
         ) : (
@@ -159,15 +159,32 @@ function SubmissionPanel({ c, canAct }: { c: CandidateDetail; canAct: boolean })
   )
 }
 
+/** True once the element has scrolled up under the app header. */
+function useScrolledPast() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [stuck, setStuck] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting && e.boundingClientRect.top < 0), { rootMargin: '-56px 0px 0px 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  return { ref, stuck }
+}
+
 function Detail({ c }: { c: CandidateDetail }) {
   const { data: user } = useMe()
   const canAct = user?.role === 'recruiter'
   const { move, retry } = useCandidateActions(c.id, c.requisition.id)
   const [activeId, setActiveId] = useState<number | null>(null)
+  const [pulse, setPulse] = useState(0)
+  const { ref: headRef, stuck } = useScrolledPast()
   const [tab, setTab] = useState<'evidence' | 'cv' | 'actions'>('evidence')
   const noText = c.raw_text.trim().length === 0
   const select = (crit: CriterionScore) => {
     setActiveId(crit.criterion_id)
+    setPulse((n) => n + 1)
     setTab('cv') // on a phone the CV is its own tab; on desktop both are visible
     requestAnimationFrame(() => document.getElementById(`ev-${crit.criterion_id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }))
   }
@@ -176,6 +193,14 @@ function Detail({ c }: { c: CandidateDetail }) {
   const { toast } = useToast()
   return (
     <>
+      {/* compact bar: the score header collapses into this once the page header has scrolled away (zero height, so nothing jumps) */}
+      <div className="sticky top-(--header-h) z-20 h-0" aria-hidden={!stuck}>
+        <div className={cn('-mx-(--gutter) flex items-center justify-between gap-3 border-b bg-ws/95 px-(--gutter) py-1.5 backdrop-blur-sm transition-[opacity,transform] duration-(--dur-base) ease-ui', stuck ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0')}>
+          <p className="min-w-0 truncate text-body font-medium">{c.full_name || c.original_name || 'Unnamed CV'} <span className="text-small font-normal text-text-2">· {c.requisition.title}</span></p>
+          <ScoreBadge score={sc} />
+        </div>
+      </div>
+      <div ref={headRef}>
       <PageHeader
         back={{ to: `/requisitions/${c.requisition.id}`, label: c.requisition.title }}
         title={c.full_name || c.original_name || 'Unnamed CV'}
@@ -187,6 +212,7 @@ function Detail({ c }: { c: CandidateDetail }) {
         }
         actions={<ScoreBadge score={sc} size="lg" />}
       />
+      </div>
       <div role="tablist" aria-label="Candidate sections" className="mb-4 grid grid-cols-3 gap-1 rounded-pill border p-1 lg:hidden">
         {(['evidence', 'cv', 'actions'] as const).map((t) => (
           <button
@@ -219,7 +245,7 @@ function Detail({ c }: { c: CandidateDetail }) {
             </div>
           ) : (
             <pre className="max-h-[75vh] overflow-auto whitespace-pre-wrap break-words rounded-card border bg-surface-1 p-5 font-sans text-small leading-relaxed">
-              <Highlighted text={c.raw_text} criteria={sc.criteria} activeId={activeId} />
+              <Highlighted text={c.raw_text} criteria={sc.criteria} activeId={activeId} pulse={pulse} />
             </pre>
           )}
         </section>

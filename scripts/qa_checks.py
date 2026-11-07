@@ -320,6 +320,8 @@ def main() -> int:
         settle(pg)
         check(not nameless(pg), "icon-only controls have accessible names: login", ", ".join(nameless(pg)[:3]))
         contrast_page(pg, "login @1440")
+        geo = pg.evaluate("""() => { const q = (sel) => document.querySelector(sel)?.getBoundingClientRect(); const nav = [...document.querySelectorAll('header *')].map(e => e.getBoundingClientRect()).reduce((m, r) => Math.max(m, r.bottom), 0); const main = q('main h1'); const strip = [...document.querySelectorAll('footer *')].map(e => e.getBoundingClientRect()).reduce((m, r) => Math.max(m, r.bottom), 0); const tilted = [...document.querySelectorAll('main *')].some(e => /rotate|matrix/.test(getComputedStyle(e).transform) && getComputedStyle(e).transform !== 'none'); return {gap: Math.round(main.top - nav), strip: Math.round(strip), vh: innerHeight, sh: document.documentElement.scrollHeight, tilted}; }""")
+        check(geo["gap"] >= 48 and geo["strip"] <= geo["vh"] and geo["sh"] <= geo["vh"] and not geo["tilted"], "login: no tilt, >= 48px under the nav, strip not cropped at 1440x900", str(geo))
         c.close()
         c, pg = ctx(375, 812)
         pg.goto(f"{BASE}/login")

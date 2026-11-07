@@ -6,30 +6,30 @@
   color-scheme: dark;
 
   /* Surfaces */
-  --bg-base: #0b1530; /* page base */
-  --bg-bloom: #1e3a66; /* gradient mid */
-  --bg-highlight: #2a4a7f; /* bloom core, showcase only */
+  --bg-base: #070c1b; /* page base */
+  --bg-bloom: #1b3866; /* gradient mid */
+  --bg-highlight: #2a4f8a; /* bloom core, showcase only */
   /* Workspace depth ladder (round 2): page < panel < card < raised. Each step is visibly lighter. */
-  --bg-ws: #0a1429; /* page, darkest */
-  --surface-panel: #0f1c3e; /* panels, sidebars, table wells */
-  --surface-1: #152550; /* cards */
-  --surface-2: #1e3068; /* raised: hover, popovers, dialogs' inputs, selected */
+  --bg-ws: #090d1a; /* page, darkest */
+  --surface-panel: #0f1527; /* panels, sidebars, table wells */
+  --surface-1: #131b30; /* cards */
+  --surface-2: #1a2440; /* raised: hover, popovers, dialogs' inputs, selected */
   --glass: rgba(255, 255, 255, 0.07); /* showcase only */
   --glass-strong: rgba(255, 255, 255, 0.11);
-  --border: rgba(255, 255, 255, 0.14); /* 1px everywhere */
-  --border-strong: rgba(255, 255, 255, 0.24);
+  --border: rgba(255, 255, 255, 0.08); /* 1px everywhere */
+  --border-strong: rgba(255, 255, 255, 0.16);
 
   /* Text (cream) */
   --text-1: #f3ebdd;
-  --text-2: rgba(243, 235, 221, 0.72);
-  --text-3: rgba(243, 235, 221, 0.62); /* helper text, placeholders: >= 4.5:1 on page, panel, card and raised */
+  --text-2: rgba(243, 235, 221, 0.74);
+  --text-3: rgba(243, 235, 221, 0.54); /* helper text, placeholders: >= 4.5:1 on page, panel, card and raised */
 
   /* The ONLY accent: primary buttons, active nav, focus ring */
   --accent: #f3ebdd;
-  --on-accent: #0b1530;
+  --on-accent: #090d1a;
 
   /* Edges and light (round 2) */
-  --highlight: rgba(255, 255, 255, 0.1); /* 1px top edge of cards */
+  --highlight: rgba(255, 255, 255, 0.06); /* 1px top edge of cards */
   --card-sheen: 4%; /* how much lighter the top of a card is than its bottom */
   --stripe: 3px; /* band stripe on ranked rows */
   --glow-blur: 24px; /* soft band glow behind a ScoreRing */
@@ -38,20 +38,20 @@
   --signal: #7fb2ff;
 
   /* Pipeline stage hues: a dot plus a 12% tinted chip. The label always names the stage (never colour alone). */
-  --stage-sourced: #94a3b8; /* slate */
-  --stage-screened: #7dd3fc; /* sky */
-  --stage-submitted: #b4a0ff; /* violet */
-  --stage-shortlisted: #5eead4; /* teal */
-  --stage-interview: #fbbf24; /* amber */
-  --stage-offered: #fb923c; /* orange */
-  --stage-joined: #86efac; /* green */
-  --stage-rejected: #c48b9a; /* muted rose */
+  --stage-sourced: #8e9aae; /* slate */
+  --stage-screened: #7cb8d6; /* sky */
+  --stage-submitted: #a79bd6; /* violet */
+  --stage-shortlisted: #6fc4b4; /* teal */
+  --stage-interview: #d9b25f; /* amber */
+  --stage-offered: #d98f5e; /* orange */
+  --stage-joined: #86c79a; /* green */
+  --stage-rejected: #b58a96; /* muted rose */
 
   /* Status only (score bands, chips). Never decoration. */
-  --ok: #8fd3a8;
-  --warn: #e8c77a;
-  --bad: #e88f8f;
-  --info: #9db8e8;
+  --ok: #7ccba0;
+  --warn: #e2bf72;
+  --bad: #e08a8a;
+  --info: #8fb0e8;
 
   /* Type: Inter Tight (self-hosted via Fontsource) */
   --font-ui: 'Inter Tight Variable', ui-sans-serif, system-ui, sans-serif;

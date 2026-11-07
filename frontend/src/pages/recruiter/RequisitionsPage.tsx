@@ -83,9 +83,9 @@ function CardSkeleton() {
 
 function Stat({ label, value }: { label: string; value: number | null }) {
   return (
-    <div className="surface-card rounded-card border px-4 py-3.5 sm:px-5">
+    <div className="surface-card rounded-card px-4 py-4 sm:px-5">
       <p className="text-micro uppercase text-text-2">{label}</p>
-      <p className="tnum text-h1">{value === null ? '–' : <CountUp value={value} />}</p>
+      <p className="tnum mt-1 text-[40px] font-light leading-none">{value === null ? '–' : <CountUp value={value} />}</p>
     </div>
   )
 }

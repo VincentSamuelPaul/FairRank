@@ -108,9 +108,9 @@ export function RankedPage() {
           <div className="flex gap-2">
             <div className="relative flex-1 md:w-64 md:flex-none">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-2" aria-hidden />
-              <Input aria-label="Search candidates" className="pl-10" placeholder="Search CVs" value={q} onChange={(e) => setQ(e.target.value)} />
+              <Input aria-label="Search candidates" className="border-border-strong bg-surface-1 pl-10" placeholder="Search CVs" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            <div className="w-40"><Listbox aria-label="Filter by stage" value={stage} onChange={setStage} options={[{ value: '', label: 'Any stage' }, ...STAGES.map((s) => ({ value: s.key, label: s.label }))]} /></div>
+            <div className="w-40"><Listbox aria-label="Filter by stage" className="border-border-strong bg-surface-1" value={stage} onChange={setStage} options={[{ value: '', label: 'Any stage' }, ...STAGES.map((s) => ({ value: s.key, label: s.label }))]} /></div>
           </div>
         </div>
       </div>

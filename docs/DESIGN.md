@@ -19,18 +19,18 @@ Rule: decoration lives only on Showcase. Workspace and Portal earn their look fr
 --bg-base:        #0B1530   /* page base */
 --bg-bloom:       #1E3A66   /* gradient mid */
 --bg-highlight:   #2A4A7F   /* bloom core, showcase only */
---bg-ws:          #0A1429   /* page, darkest (round 2: see section 7) */
+--bg-ws:          #090D1A   /* page, darkest (round 2: see section 7) */
 --surface-panel:  #0F1C3E   /* panels */
---surface-1:      #152550   /* cards */
+--surface-1:      #131B30   /* cards */
 --surface-2:      #1E3068   /* raised / hover */
 --glass:          rgba(255,255,255,0.07)   /* showcase only */
 --glass-strong:   rgba(255,255,255,0.11)
---border:         rgba(255,255,255,0.14)   /* 1px everywhere */
---border-strong:  rgba(255,255,255,0.24)
+--border:         rgba(255,255,255,0.08)   /* 1px everywhere */
+--border-strong:  rgba(255,255,255,0.16)
 
 --text-1:         #F3EBDD   /* primary (cream) */
---text-2:         rgba(243,235,221,0.72)
---text-3:         rgba(243,235,221,0.62)   /* helper text, placeholders (>= 4.5:1 on all four workspace steps) */
+--text-2:         rgba(243,235,221,0.74)
+--text-3:         rgba(243,235,221,0.54)   /* helper text, placeholders (>= 4.5:1 on all four workspace steps) */
 
 --accent:         #F3EBDD   /* primary action colour: primary buttons */
 --on-accent:      #0B1530
@@ -105,7 +105,7 @@ Each has loading, empty and error variants where relevant, and a story or demo r
 Owner feedback: the workspace was one flat navy, forms were dark-on-dark, login did not excite. Additions below extend sections 1 to 6; where they conflict, this section wins.
 
 ### 7.1 Depth ladder (workspace)
-`page (--bg-ws #0A1429) < panel (--surface-panel #0F1C3E) < card (--surface-1 #152550) < raised (--surface-2 #1E3068)`. Each step is visibly lighter; use the next step up for anything that sits on a surface (inputs inside a card use raised; hover is raised).
+`page (--bg-ws #090D1A) < panel (--surface-panel #0F1527) < card (--surface-1 #131B30) < raised (--surface-2 #1A2440)`. Each step is visibly lighter; use the next step up for anything that sits on a surface (inputs inside a card use raised; hover is raised).
 - **Card treatment** (`surface-card` utility): 1px top edge `--highlight` (rgba(255,255,255,0.10)) and a vertical sheen, the top `--card-sheen` (4%) lighter than the bottom.
 - **Page wash** (`page-wash` utility): a very subtle radial wash behind page headers so the page is not one flat slab.
 - Contrast (checked by `scripts/contrast.py`): `--text-2` >= 6.25:1 and `--text-3` >= 5.05:1 on every step.
@@ -167,3 +167,15 @@ The page's primary action is pinned to a bottom bar (solid in the workspace, `St
 - No card, tilt, peeking card or carousel dots. Headline is solid cream on both lines at `text-hero`; "its work." is set apart by a 2px cream@60% underline that draws itself once (`.draw-underline`, 700ms).
 - One **proof line** under the subcopy, left-aligned with the headline: micro-caps criterion label, a 20px quote, a "Verified in CV" tag with a self-drawing tick. On load a `--signal` 18% wash sweeps behind the quote (`.proof-wash`, 900ms), then the tick draws. Every 8s it cross-fades (300ms) to the next of 3 samples; the third honestly shows "No evidence found" with a dashed tag. Paused on hover/focus and under reduced motion. Labelled "Live demo, synthetic data".
 - Sign-in is the only panel: one straight glass card, vertically centred on the headline block. At least 48px between nav pill and content on desktop. The five-point strip is never cropped at 1440x900 or 375x812 (2-column on phone). Phone order: headline, proof line, sign-in, strip.
+
+### 8.2 Colour refinement (calmer, more neutral)
+Final values live in `tokens.css`; everything below was checked with `scripts/contrast.py` and the pixel QA.
+- Workspace ladder (neutral graphite-navy, not blue): page `#090D1A` < panel `#0F1527` < card `#131B30` < raised `#1A2440`. Borders `rgba(255,255,255,.08)` / strong `.16`; card top-edge highlight `.06`.
+- Showcase: base `#070C1B`, bloom `#1B3866`, highlight `#2A4F8A`. Streaks and grain unchanged. Text on the login card is checked over the bloom (the card is tinted `bg-base` where it needs it).
+- Text: cream `#F3EBDD`, text-2 74%, text-3 54% (still >= 4.5:1 on page, panel, card and raised).
+- `--signal #7FB2FF` is the ONLY saturated blue in the workspace: focus, links, active tab, selected outline, pipeline progress fill, evidence highlight. No blue surface fills (the page wash is now a neutral 3% cream glow).
+- Status, for status only: ok `#7CCBA0`, warn `#E2BF72`, bad `#E08A8A`, info `#8FB0E8`.
+- Stage hues kept but desaturated (see tokens); chips are tinted only (12% fill, 1px border at 30%, label in text-1).
+- Requisition card: ONE coloured element, the band distribution bar (4px high, 2px gaps). Pipeline progress is single-hue: filled segments `--signal`, empty segments 8% cream, text "Furthest: Joined". Stat tiles: card surface, no border, micro label, 40px light tabular number (no sparkline: no real series exists).
+- Ranked list: band filters are neutral cards with a 3px coloured left edge and a coloured count; selected = raised surface + `--signal` outline. Search and stage controls use the card surface with a 1px strong border and the signal focus ring.
+- Candidate detail: evidence in the CV text is a `--signal` 16% wash with a 2px bottom border at 60% and 2px radius; selecting a quote scrolls to it and pulses it once (900ms). The score header collapses into a compact sticky bar (name + score ring) once the page header scrolls away; the bar has zero layout height.
