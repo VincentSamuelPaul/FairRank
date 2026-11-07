@@ -179,3 +179,9 @@ Final values live in `tokens.css`; everything below was checked with `scripts/co
 - Requisition card: ONE coloured element, the band distribution bar (4px high, 2px gaps). Pipeline progress is single-hue: filled segments `--signal`, empty segments 8% cream, text "Furthest: Joined". Stat tiles: card surface, no border, micro label, 40px light tabular number (no sparkline: no real series exists).
 - Ranked list: band filters are neutral cards with a 3px coloured left edge and a coloured count; selected = raised surface + `--signal` outline. Search and stage controls use the card surface with a 1px strong border and the signal focus ring.
 - Candidate detail: evidence in the CV text is a `--signal` 16% wash with a 2px bottom border at 60% and 2px radius; selecting a quote scrolls to it and pulses it once (900ms). The score header collapses into a compact sticky bar (name + score ring) once the page header scrolls away; the bar has zero layout height.
+
+### 8.3 Round 3 review notes (rules that came out of it)
+- A status label never shares a row with a truncating text line on a phone; put it in the footer row (requisition card "N unread").
+- Inputs on the glass login card use `bg-bg-base/50` (a darker well), not a light glass fill: crisp edge, higher contrast.
+- Criterion score bars are `text-1` at 70%, not full cream, so a row of 100s does not become a block of white.
+- The score ring on the candidate header is `md` on phones and `lg` from `md` up.

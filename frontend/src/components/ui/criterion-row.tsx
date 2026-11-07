@@ -7,7 +7,7 @@ import { EvidenceQuote } from '@/components/ui/evidence-quote'
 export function ScoreBar({ points, className }: { points: number; className?: string }) {
   return (
     <div className={cn('h-1.5 w-full overflow-hidden rounded-pill bg-surface-2', className)} role="presentation">
-      <div className="h-full rounded-pill bg-accent" style={{ width: `${Math.max(0, Math.min(100, points))}%` }} />
+      <div className="h-full rounded-pill bg-text-1/70" style={{ width: `${Math.max(0, Math.min(100, points))}%` }} />
     </div>
   )
 }

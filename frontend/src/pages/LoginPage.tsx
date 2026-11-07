@@ -83,10 +83,10 @@ function SignInCard({ form }: { form: UseFormReturn<Values> }) {
       <div className="space-y-1"><h2>Sign in</h2><p className="text-small text-text-2">Use your FairRank account.</p></div>
       <form className="space-y-3.5" noValidate onSubmit={handleSubmit((values) => login.mutate(values, { onSuccess: (u) => navigate(homeFor(u.role), { replace: true }) }))}>
         <Field label="Email" htmlFor="email" error={errors.email?.message}>
-          <Input id="email" type="email" autoComplete="username" className="border-border-strong bg-glass-strong" aria-invalid={!!errors.email} {...register('email')} />
+          <Input id="email" type="email" autoComplete="username" className="border-border-strong bg-bg-base/50" aria-invalid={!!errors.email} {...register('email')} />
         </Field>
         <Field label="Password" htmlFor="password" error={errors.password?.message}>
-          <Input id="password" type="password" autoComplete="current-password" className="border-border-strong bg-glass-strong" aria-invalid={!!errors.password} {...register('password')} />
+          <Input id="password" type="password" autoComplete="current-password" className="border-border-strong bg-bg-base/50" aria-invalid={!!errors.password} {...register('password')} />
         </Field>
         {login.isError && <p role="alert" className="text-small text-bad">{login.error.message}</p>}
         {/* on a phone the primary action is pinned to the bottom edge so it is always in thumb reach */}

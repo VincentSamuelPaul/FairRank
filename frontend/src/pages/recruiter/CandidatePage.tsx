@@ -210,7 +210,7 @@ function Detail({ c }: { c: CandidateDetail }) {
             <StageBadge stage={c.stage} />
           </span>
         }
-        actions={<ScoreBadge score={sc} size="lg" />}
+        actions={<><span className="md:hidden"><ScoreBadge score={sc} /></span><span className="max-md:hidden"><ScoreBadge score={sc} size="lg" /></span></>}
       />
       </div>
       <div role="tablist" aria-label="Candidate sections" className="mb-4 grid grid-cols-3 gap-1 rounded-pill border p-1 lg:hidden">

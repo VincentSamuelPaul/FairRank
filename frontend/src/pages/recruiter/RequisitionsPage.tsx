@@ -39,12 +39,6 @@ function Card({ r, list, i }: { r: Requisition; list?: RankedList; i: number }) 
             <h2 className="truncate text-body font-medium">{r.title}</h2>
             <p className="truncate text-small text-text-2">{r.client.name}{r.location && ` · ${r.location}`}</p>
           </div>
-          {s.unread > 0 && (
-            <span className="inline-flex shrink-0 items-center gap-1.5 text-micro uppercase text-signal" title={`${s.unread} scored CVs nobody has opened yet`}>
-              <span aria-hidden className="size-1.5 rounded-pill bg-signal" />
-              <span className="tnum">{s.unread}</span> unread
-            </span>
-          )}
         </div>
         <p className="tnum text-small text-text-2">
           {r.exp_min_years !== null && `${years(r.exp_min_years)}–${years(r.exp_max_years)}`}
@@ -62,6 +56,12 @@ function Card({ r, list, i }: { r: Requisition; list?: RankedList; i: number }) 
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t pt-3 text-small">
           <span><strong className="tnum font-medium">{r.counts?.candidates ?? 0}</strong> <span className="text-text-2">{r.counts?.candidates === 1 ? 'CV' : 'CVs'}</span></span>
           <span><strong className="tnum font-medium">{r.counts?.submitted ?? 0}</strong> <span className="text-text-2">submitted</span></span>
+          {s.unread > 0 && (
+            <span className="inline-flex items-center gap-1.5 text-signal" title={`${s.unread} scored CVs nobody has opened yet`}>
+              <span aria-hidden className="size-1.5 rounded-pill bg-signal" />
+              <strong className="tnum font-medium">{s.unread}</strong> unread
+            </span>
+          )}
           <span className="tnum ml-auto text-text-2">{dateOnly(r.created_at)}</span>
         </div>
       </Link>
@@ -123,7 +123,7 @@ export function RequisitionsPage() {
       {query.data && reqs.length > 0 && (
         <div className="mb-6 grid grid-cols-3 gap-2 sm:gap-3">
           <Stat label="Open requisitions" value={stats.open} />
-          <Stat label="CVs screened this week" value={loaded ? stats.screened : null} />
+          <Stat label="Screened this week" value={loaded ? stats.screened : null} />
           <Stat label="Awaiting client" value={loaded ? stats.awaiting : null} />
         </div>
       )}
