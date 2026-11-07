@@ -54,6 +54,32 @@ describe('login page', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password.')
   })
 
+  it('reveals the password with an accessible toggle', async () => {
+    mockApi({})
+    renderApp()
+    const pw = await screen.findByLabelText('Password')
+    expect(pw).toHaveAttribute('type', 'password')
+    await userEvent.click(screen.getByRole('button', { name: 'Show password' }))
+    expect(pw).toHaveAttribute('type', 'text')
+    expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('clears the error banner when typing and fills (without submitting) from a demo role', async () => {
+    const fetchMock = mockApi({
+      '/api/auth/csrf/': { status: 200 },
+      '/api/auth/login/': { status: 400, body: { detail: 'Invalid email or password.' } },
+    })
+    renderApp()
+    await userEvent.type(await screen.findByLabelText('Email'), 'a@example.com')
+    await userEvent.type(screen.getByLabelText('Password'), 'wrong')
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true')
+    await userEvent.type(screen.getByLabelText('Password'), 'x')
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+    expect(fetchMock.mock.calls.filter(([u]) => u === '/api/auth/login/')).toHaveLength(1)
+  })
+
   it.each([
     ['recruiter', 'Requisitions'],
     ['delivery_head', 'Delivery'],
@@ -72,7 +98,7 @@ describe('route guards', () => {
   it('sends a signed-out visitor to login', async () => {
     mockApi({})
     renderApp('/requisitions')
-    expect(await screen.findByText('Sign in to FairRank')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
   })
 
   it("bounces a client away from the recruiter's page", async () => {

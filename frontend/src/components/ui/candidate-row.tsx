@@ -86,7 +86,7 @@ export function CandidateRow({ row, rank, actions, uploadTo = 'upload' }: { row:
     <li className="surface-card relative grid grid-cols-1 gap-y-3 overflow-hidden rounded-card border p-4 pl-5 md:grid-cols-[7rem_1fr_11rem] md:gap-x-6 md:p-5 md:pl-6">
       <span aria-hidden className={cn('absolute inset-y-0 left-0 w-(--stripe)', stripe(row))} />
       <div className="flex items-center gap-3 md:flex-col md:gap-1.5 md:row-span-2">
-        <span className="tnum text-h1 text-text-3" aria-label={rank ? `Rank ${rank}` : 'Not ranked'}>{rank ?? '–'}</span>
+        <span className={cn('tnum text-h1', rank === 1 ? 'text-text-1' : 'text-text-3')} aria-label={rank ? `Rank ${rank}` : 'Not ranked'}>{rank ?? '–'}</span>
         <ScoreRing value={row.score.total} band={row.score.band} state={row.score.state} stackedMd glow />
       </div>
 

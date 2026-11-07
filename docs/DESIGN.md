@@ -19,9 +19,9 @@ Rule: decoration lives only on Showcase. Workspace and Portal earn their look fr
 --bg-base:        #0B1530   /* page base */
 --bg-bloom:       #1E3A66   /* gradient mid */
 --bg-highlight:   #2A4A7F   /* bloom core, showcase only */
---bg-ws:          #090D1A   /* page, darkest (round 2: see section 7) */
+--bg-ws:          #0A0F1E   /* page, darkest (round 2: see section 7) */
 --surface-panel:  #0F1C3E   /* panels */
---surface-1:      #131B30   /* cards */
+--surface-1:      #141C32   /* cards */
 --surface-2:      #1E3068   /* raised / hover */
 --glass:          rgba(255,255,255,0.07)   /* showcase only */
 --glass-strong:   rgba(255,255,255,0.11)
@@ -105,7 +105,7 @@ Each has loading, empty and error variants where relevant, and a story or demo r
 Owner feedback: the workspace was one flat navy, forms were dark-on-dark, login did not excite. Additions below extend sections 1 to 6; where they conflict, this section wins.
 
 ### 7.1 Depth ladder (workspace)
-`page (--bg-ws #090D1A) < panel (--surface-panel #0F1527) < card (--surface-1 #131B30) < raised (--surface-2 #1A2440)`. Each step is visibly lighter; use the next step up for anything that sits on a surface (inputs inside a card use raised; hover is raised).
+`page (--bg-ws #0A0F1E) < panel (--surface-panel #0F1628) < card (--surface-1 #141C32) < raised (--surface-2 #1B2542)`. Each step is visibly lighter; use the next step up for anything that sits on a surface (inputs inside a card use raised; hover is raised).
 - **Card treatment** (`surface-card` utility): 1px top edge `--highlight` (rgba(255,255,255,0.10)) and a vertical sheen, the top `--card-sheen` (4%) lighter than the bottom.
 - **Page wash** (`page-wash` utility): a very subtle radial wash behind page headers so the page is not one flat slab.
 - Contrast (checked by `scripts/contrast.py`): `--text-2` >= 6.25:1 and `--text-3` >= 5.05:1 on every step.
@@ -189,7 +189,7 @@ Final values live in `tokens.css`; everything below was checked with `scripts/co
 ## 9. Round 4
 ### 9.1 Login card (replaces the single glass card of 8.1)
 - Material: tinted glass `--login-glass` (rgba(140,175,235,.07)), `blur(24px) saturate(140%)`, a 1px **gradient** border (masked pseudo-element: `--login-edge-hi` .28 top-left to `--login-edge-lo` .06 bottom-right), a 1px inner top highlight, `--login-shadow`, radius 24, padding 32 (24 on short desktop viewports and phones). A faint cream glow (`--login-glow`, 300px) sits behind it. Phones drop the blur (a backdrop-filter box becomes the containing block of the pinned Sign in bar) and use a darker tint instead.
-- Inside `.login-card`, text-2 is 80% and text-3 68% (text over the bright bloom needs more light). Tokens: `--field-bg` .05, `--field-border` .14, hover `.22`, `--autofill-bg` (opaque stand-in so autofill never paints yellow/white).
+- Inside `.login-card`, text-2 is 80% and text-3 76% (text over the bright bloom needs more light). Tokens: `--field-bg` .05, `--field-border` .14, hover `.22`, `--autofill-bg` (opaque stand-in so autofill never paints yellow/white).
 - Copy: "Welcome back" / "Sign in to keep screening."
 - Fields: 52px, radius 14, 18px leading icon (mail, lock) in text-3 that turns text-1 on focus; the wrapper draws border + 4px signal@22% ring (120ms); hover border .22. Password has a reveal toggle (`aria-label` Show/Hide password, `aria-pressed`) and an inline Caps Lock warning. NOTE: because of that toggle, scripts must use `get_by_label("Password", exact=True)`.
 - Error: compact banner ABOVE the first field (alert icon, `--bad` text on 10% tint, `role="alert"`, one 300ms shake), both fields get a `--bad` border, message unchanged ("Invalid email or password."), cleared on typing.
@@ -197,3 +197,17 @@ Final values live in `tokens.css`; everything below was checked with `scripts/co
 - Demo roles (only when `VITE_DEMO_MODE=true`): under a hairline and "Try a demo role", three selectable rows (role in text-1, one-line blurb in text-3), 56px on phones, 48px on desktop. Selecting fills the form and focuses Sign in; it never submits.
 - Footer line under the card (lock icon, text-3 micro): "Every CV view is logged. Candidate data is used for hiring only." On desktop it is absolutely positioned so the CARD (not card + footer) is vertically centred on the headline block.
 - Entrance: card fades up 8px over 320ms, fields stagger 40ms (`.fade-up`); disabled by reduced motion.
+
+### 9.2 One colour story (login and workspace are the same family)
+- Workspace ladder now carries a blue undertone: page `#0A0F1E` < panel `#0F1628` < card `#141C32` < raised `#1B2542` (supersedes 8.2's graphite values). Contrast re-verified with `scripts/contrast.py` (0 failures) and the pixel QA.
+- The login bloom is reused as a **header wash** on every workspace page: `page-wash`, `--bg-bloom` at 22% fading to transparent over 360px, `position: fixed` to the top of the viewport so it does not scroll with content.
+- Cream is the ONLY warm colour, used on purpose: primary actions, the #1 candidate's rank number, and the active nav underline (with a soft cream glow). Everything else is cool. No new hue was added.
+- Quieter status (chroma lowered): ok `#74C29A`, warn `#DDB96E`, bad `#D98585`, info `#8DAEE6`. Used only for 3px edges, ring strokes, tinted chips and counts; text on tinted chips stays text-1.
+- Requisition band bar: 3px high, 2px gaps, 70% opacity, full opacity on card hover.
+- Tracks (empty bars, progress, score bars, ring tracks) use `--track` (white 7%) via the `bg-track` / `stroke-track` utilities.
+- `::selection` is `--signal` at 35%. Scrollbars are thin, thumb white at 14%, transparent track (webkit and Firefox).
+- `scripts/contrast.py` now tests the login card with its own text values (text-2 80%, text-3 76%) over base and bloom; the old "text-2 on bloom" failure is resolved. Rendered-pixel QA covers the real pixels behind each text run.
+
+### 9.3 Round 4 review notes
+- The compact candidate header is column-width with rounded bottom corners (it overshot the column and read as a slab).
+- Screenshot tooling: `login-error`, `login-filled`, `login-loading` (login request held open, never reaches the backend) and `candidate-scrolled` (scrolled 600px). Login/new-requisition/scrolled shots are viewport-fold captures.

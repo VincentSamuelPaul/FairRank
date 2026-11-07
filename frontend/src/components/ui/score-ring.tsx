@@ -64,7 +64,7 @@ export function ScoreRing({ value = null, band = null, state = 'scored', size = 
     <span className={layout} role="img" aria-label={`Score ${Math.round(v)} out of 100, ${WORD[b]}`}>
       <span className={cn('relative grid shrink-0 place-items-center rounded-pill', SIZE[size], glow && cn(GLOW[b], 'shadow-[0_0_var(--glow-blur)_calc(var(--glow-blur)/4)_color-mix(in_srgb,var(--band)_12%,transparent)]'))}>
         <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90" aria-hidden>
-          <circle cx="18" cy="18" r={r} fill="none" strokeWidth="3" className="stroke-border" />
+          <circle cx="18" cy="18" r={r} fill="none" strokeWidth="3" className="stroke-track" />
           <circle cx="18" cy="18" r={r} fill="none" strokeWidth="3" strokeLinecap="round" pathLength={100} strokeDasharray={`${v} 100`} style={{ '--v': v, '--ms': `${ms}ms` } as React.CSSProperties} className={cn(STROKE[b], 'ring-fill')} />
         </svg>
         <span className="tnum relative font-medium leading-none">{shown}</span>

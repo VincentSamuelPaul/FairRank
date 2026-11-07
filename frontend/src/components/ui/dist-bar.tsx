@@ -14,7 +14,7 @@ export function DistBar({ counts, className }: { counts: DistCounts; className?:
   const total = counts.strong + counts.possible + counts.weak + counts.review
   return (
     <div className={cn('space-y-1.5', className)}>
-      <div role="img" aria-label={SEGS.map((s) => `${counts[s.key]} ${s.label}`).join(', ')} className="flex h-1 gap-0.5 overflow-hidden rounded-pill bg-text-1/8">
+      <div role="img" aria-label={SEGS.map((s) => `${counts[s.key]} ${s.label}`).join(', ')} className="flex h-[3px] gap-0.5 overflow-hidden rounded-pill bg-track opacity-70 transition-opacity duration-(--dur-fast) group-hover:opacity-100">
         {total > 0 && SEGS.map((s) => counts[s.key] > 0 && <span key={s.key} className={cn('h-full', s.bar)} style={{ flexGrow: counts[s.key] }} />)}
       </div>
       <p className="tnum flex flex-wrap gap-x-3 text-micro text-text-2">

@@ -195,7 +195,7 @@ function Detail({ c }: { c: CandidateDetail }) {
     <>
       {/* compact bar: the score header collapses into this once the page header has scrolled away (zero height, so nothing jumps) */}
       <div className="sticky top-(--header-h) z-20 h-0" aria-hidden={!stuck}>
-        <div className={cn('-mx-(--gutter) flex items-center justify-between gap-3 border-b bg-ws/95 px-(--gutter) py-1.5 backdrop-blur-sm transition-[opacity,transform] duration-(--dur-base) ease-ui', stuck ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0')}>
+        <div className={cn('flex items-center justify-between gap-3 rounded-b-card border border-t-0 bg-ws/95 px-4 py-1.5 shadow-float backdrop-blur-sm transition-[opacity,transform] duration-(--dur-base) ease-ui', stuck ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0')}>
           <p className="min-w-0 truncate text-body font-medium">{c.full_name || c.original_name || 'Unnamed CV'} <span className="text-small font-normal text-text-2">· {c.requisition.title}</span></p>
           <ScoreBadge score={sc} />
         </div>

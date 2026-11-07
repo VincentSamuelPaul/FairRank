@@ -43,13 +43,22 @@ def main() -> int:
     # Surfaces: workspace solids, and the showcase canvas (glass laid over base / bloom / highlight).
     surfaces = {
         "bg-ws (page)": solid("bg-ws"), "surface-panel": solid("surface-panel"), "surface-1 (card)": solid("surface-1"), "surface-2 (raised)": solid("surface-2"),
-        "glass on bg-base": blend(t["glass"], solid("bg-base")),
-        "glass-strong on bg-base": blend(t["glass-strong"], solid("bg-base")),
-        "glass on bg-bloom": blend(t["glass"], solid("bg-bloom")),
-        "glass-strong on bg-highlight (worst case)": blend(t["glass-strong"], solid("bg-highlight")),
-        "bg-bloom": solid("bg-bloom"), "bg-base": solid("bg-base"),
+        "bg-base": solid("bg-base"),
+    }
+    # Login card (round 4): tinted glass over the brightest parts of the canvas. Inside .login-card text-2 is 80% and text-3 76%
+    # (values mirrored from the .login-card rule in index.css). The card sits at the right edge, far from the bloom core (bg-highlight),
+    # so bg-bloom is its brightest real backdrop; the rendered-pixel QA (scripts/qa.sh) checks the actual pixels behind every text run.
+    card = {
+        "login glass on bg-base": blend(t["login-glass"], solid("bg-base")),
+        "login glass on bg-bloom": blend(t["login-glass"], solid("bg-bloom")),
     }
     fails = 0
+    for tn, alpha in (("text-1", 1.0), ("text-2 @80%", 0.8), ("text-3 @76%", 0.76)):
+        for sn, sc in card.items():
+            fg = blend(t["text-1"][:3] + (alpha,), sc)
+            r = ratio(fg, sc)
+            fails += r < 4.5
+            print(f"{tn:<12}{sn:<43}{r:>6.2f}  {'pass' if r >= 4.5 else 'FAIL'}")
     print(f"{'text':<9}{'surface':<46}{'ratio':>6}  verdict")
     for tn in ("text-1", "text-2", "text-3"):
         for sn, sc in surfaces.items():

@@ -102,7 +102,7 @@ export function AppShell({ children, narrow = false, extra }: { children: React.
                     key={n.to}
                     to={n.to}
                     className={({ isActive }) =>
-                      cn('flex h-full items-center px-3 text-small transition-colors duration-(--dur-fast)', isActive ? 'font-medium text-text-1 shadow-[inset_0_-2px_0_var(--signal)]' : 'text-text-2 hover:text-text-1')
+                      cn('flex h-full items-center px-3 text-small transition-colors duration-(--dur-fast)', isActive ? 'font-medium text-text-1 shadow-[inset_0_-2px_0_var(--accent),0_8px_16px_-6px_color-mix(in_srgb,var(--accent)_45%,transparent)]' : 'text-text-2 hover:text-text-1')
                     }
                   >
                     {n.label}
@@ -130,7 +130,7 @@ export function AppShell({ children, narrow = false, extra }: { children: React.
         {/* hairline that fades out at both ends */}
         <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,var(--border-strong)_22%,var(--border-strong)_78%,transparent)]" />
       </header>
-      <div aria-hidden className="page-wash pointer-events-none absolute inset-x-0 top-(--header-h) h-96" />
+      <div aria-hidden className="page-wash pointer-events-none fixed inset-x-0 top-0 z-0 h-[360px]" />
       <main id="main" className={cn('page-enter relative mx-auto px-(--gutter) pb-24 pt-6 sm:pt-8', wrap)}>
         {children}
       </main>

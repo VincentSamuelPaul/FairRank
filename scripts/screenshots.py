@@ -133,7 +133,7 @@ def run(name: str, view: str, page: Page) -> None:
         page.locator("ul > li a[href^='/candidates/']").first.click()
         page.wait_for_selector("pre", state="attached")
         settle(page)
-        page.mouse.wheel(0, 600)
+        page.evaluate("window.scrollTo(0, 600)")
         page.wait_for_timeout(700)
     elif name == "portal":
         sign_in(page, CLIENT)

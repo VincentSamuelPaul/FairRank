@@ -55,4 +55,5 @@ Never cut: evidence verification, blind scoring, client isolation, open-before-s
 - [x] Quality checklist run: `scripts/qa.sh` (widths 375/768/1440, states, keyboard, dead buttons, tabular figures, pixel contrast)
 - [x] Round 2 (depth ladder, login wow, workspace hierarchy, forms, phone pass): two review rounds, 74/74 QA checks, screenshots in `docs/screens/round2/`
 - [x] Round 3: login proof line (no card), neutral colour refinement, compact candidate header; 75/75 QA; screenshots in `docs/screens/round3/`
+- [x] Round 4: login card finesse (glass, icon fields, reveal, error banner, demo rows, success tick) and one colour story; 79/79 QA, contrast script clean; screenshots in `docs/screens/round4/`
 - [ ] Still on the old styling (tokens only, not yet re-composed with the kit): requisitions list, scorecard editor, upload, pipeline, delivery head report
