@@ -162,3 +162,31 @@ dialog.modal {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* SHOWCASE surface (login, landing): framed canvas, gradient, one light bloom, 1px vertical streaks. No images. */
+.showcase-canvas {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-frame);
+  background:
+    radial-gradient(55% 65% at 30% 45%, color-mix(in srgb, var(--bg-highlight) 35%, transparent), transparent 72%),
+    linear-gradient(165deg, var(--bg-bloom) 0%, var(--bg-base) 70%);
+}
+.showcase-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--text-1) 4%, transparent) 0 1px, transparent 1px 7px);
+}
+
+dialog.modal[open] {
+  animation: sheet-in var(--dur-base) var(--ease);
+}
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateY(var(--shift)); }
+  to { opacity: 1; transform: none; }
+}

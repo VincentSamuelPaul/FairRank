@@ -2,6 +2,7 @@ import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { FullPageMessage, RequireRole } from '@/components/RequireRole'
 import { homeFor, useMe } from '@/lib/auth'
 import { LoginPage } from '@/pages/LoginPage'
+import { ComponentsPage } from '@/pages/dev/ComponentsPage'
 import { AgreementReportPage, PipelineOverviewPage } from '@/pages/head/DeliveryHeadPage'
 import { PortalCandidatePage } from '@/pages/portal/PortalCandidatePage'
 import { PortalPage } from '@/pages/portal/PortalPage'
@@ -30,6 +31,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {import.meta.env.DEV && <Route path="/dev/components" element={<ComponentsPage />} />}
       <Route element={<RequireRole roles={['recruiter', 'delivery_head']} />}>
         <Route path="/requisitions" element={<RequisitionsPage />} />
         <Route path="/requisitions/:id" element={<RequisitionLayout />}>
