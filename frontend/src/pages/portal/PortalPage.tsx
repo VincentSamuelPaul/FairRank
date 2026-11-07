@@ -1,10 +1,10 @@
-import { Info, Quote } from 'lucide-react'
+import { Info } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell } from '@/components/AppShell'
 import { MaskedContacts, ScoreBadge, StageBadge } from '@/components/score'
 import { Async, EmptyState, ListSkeleton } from '@/components/states'
-import { Button } from '@/components/ui/button'
+import { EvidenceQuote } from '@/components/ui/evidence-quote'
 import { notice, years } from '@/lib/format'
 import { usePortalCandidates, usePortalRequisitions } from '@/lib/queries'
 import type { ClientCard } from '@/lib/types'
@@ -12,39 +12,34 @@ import { cn } from '@/lib/utils'
 import { DecisionActions, DecisionStatus } from './Actions'
 import { HowWeScreen } from './HowWeScreen'
 
-/** The strongest verified quote: the reason this candidate is on your list. */
+/** The two strongest verified quotes: the reasons this candidate is on your list. */
 function topEvidence(card: ClientCard) {
-  return [...card.score.criteria].filter((c) => c.evidence_status === 'verified').sort((a, b) => b.points - a.points)[0]
+  return [...card.score.criteria].filter((c) => c.evidence_status === 'verified').sort((a, b) => b.points - a.points).slice(0, 2)
 }
 
 function Card({ card }: { card: ClientCard }) {
   const ev = topEvidence(card)
   return (
-    <li className="space-y-3 rounded-card border bg-surface-1 p-4">
+    <li className="space-y-4 rounded-card border bg-surface-1 p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <Link to={`/portal/candidates/${card.id}`} className="block truncate text-lg font-semibold leading-tight hover:underline">{card.full_name}</Link>
-          <p className="text-sm text-muted-foreground">{card.current_role}</p>
+          <Link to={`/portal/candidates/${card.id}`} className="block truncate text-h2 hover:underline">{card.full_name}</Link>
+          <p className="text-small text-text-2">{card.current_role}</p>
+          <p className="tnum text-small text-text-2">
+            {years(card.experience_years)} · notice {notice(card.notice_days)}{card.location && ` · ${card.location}`}
+          </p>
         </div>
-        <ScoreBadge score={card.score} />
+        <ScoreBadge score={card.score} stacked />
       </div>
-      <p className="text-sm text-muted-foreground">
-        {years(card.experience_years)} · notice {notice(card.notice_days)}{card.location && ` · ${card.location}`}
-      </p>
-      {ev && (
-        <blockquote className="flex gap-2 border-l-2 border-primary/50 pl-3 text-sm">
-          <Quote className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
-          <span>
-            <span className="block text-xs text-muted-foreground">{ev.name}</span>“{ev.quote}”
-          </span>
-        </blockquote>
-      )}
+      {ev.map((c) => (
+        <EvidenceQuote key={c.criterion_id} criterion={c.name} quote={c.quote} status="verified" unverified={c.unverified} clamp={2} />
+      ))}
       <MaskedContacts contacts={card.contacts} />
       <DecisionStatus card={card} />
-      <DecisionActions card={card} compact />
-      <div className="flex items-center justify-between pt-1 text-sm">
+      <DecisionActions card={card} />
+      <div className="flex min-h-11 items-center justify-between gap-3 border-t pt-3">
         <StageBadge stage={card.stage} />
-        <Link to={`/portal/candidates/${card.id}`} className="text-primary hover:underline">Full evidence and CV</Link>
+        <Link to={`/portal/candidates/${card.id}`} className="inline-flex min-h-11 items-center text-small underline underline-offset-4">Full evidence and CV</Link>
       </div>
     </li>
   )
@@ -56,10 +51,13 @@ export function PortalPage() {
   const [how, setHow] = useState(false)
   const query = usePortalCandidates(reqId)
   return (
-    <AppShell narrow extra={<Button variant="ghost" size="sm" onClick={() => setHow(true)}><Info /> <span className="hidden sm:inline">How we screen</span><span className="sm:hidden">How</span></Button>}>
-      <div className="mb-5 space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Your shortlist</h1>
-        <p className="text-sm text-muted-foreground">Candidates our recruiters reviewed and submitted for your roles, best match first.</p>
+    <AppShell narrow>
+      <div className="mb-5 space-y-2">
+        <h1>Your shortlist</h1>
+        <p className="text-small text-text-2">Candidates our recruiters reviewed and submitted for your roles, best match first.</p>
+        <button type="button" onClick={() => setHow(true)} className="inline-flex min-h-11 items-center gap-1.5 text-small underline underline-offset-4">
+          <Info className="size-4" aria-hidden /> How we screen
+        </button>
       </div>
       {(reqs.data?.length ?? 0) > 1 && (
         <div role="group" aria-label="Filter by role" className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
@@ -69,7 +67,7 @@ export function PortalPage() {
               type="button"
               aria-pressed={reqId === r.id}
               onClick={() => setReqId(r.id)}
-              className={cn('shrink-0 rounded-full px-3.5 py-2 text-sm ring-1', reqId === r.id ? 'bg-primary text-primary-foreground ring-primary' : 'ring-foreground/15')}
+              className={cn('inline-flex h-11 shrink-0 items-center rounded-pill border px-4 text-small', reqId === r.id ? 'border-accent bg-accent text-on-accent' : 'border-border-strong')}
             >
               {r.title}
               {r.awaiting_decision > 0 && <span className="ml-1.5 tabular-nums opacity-80">{r.awaiting_decision}</span>}

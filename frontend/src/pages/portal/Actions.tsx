@@ -32,8 +32,8 @@ function RejectModal({ card, open, onClose }: { card: ClientCard; open: boolean;
         </div>
         <FieldError message={decide.isError ? decide.error.message : undefined} />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" className="h-10" onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="destructive" className="h-10" disabled={decide.isPending}>{decide.isPending ? 'Rejecting…' : 'Reject'}</Button>
+          <Button type="button" variant="outline"  onClick={onClose}>Cancel</Button>
+          <Button type="submit" variant="destructive"  disabled={decide.isPending}>{decide.isPending ? 'Rejecting…' : 'Reject'}</Button>
         </div>
       </form>
     </Modal>
@@ -58,12 +58,12 @@ function SlotModal({ card, open, onClose }: { card: ClientCard; open: boolean; o
       >
         <div className="space-y-1.5">
           <Label htmlFor={`start-${card.id}`}>Date and time</Label>
-          <Input id={`start-${card.id}`} type="datetime-local" className="h-10" aria-invalid={!!errors.starts_at} {...register('starts_at')} />
+          <Input id={`start-${card.id}`} type="datetime-local"  aria-invalid={!!errors.starts_at} {...register('starts_at')} />
           <FieldError message={errors.starts_at?.message} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`dur-${card.id}`}>Length</Label>
-          <Select id={`dur-${card.id}`} className="h-10" {...register('duration_minutes')}>
+          <Select id={`dur-${card.id}`}  {...register('duration_minutes')}>
             <option value={30}>30 minutes</option>
             <option value={45}>45 minutes</option>
             <option value={60}>1 hour</option>
@@ -71,42 +71,39 @@ function SlotModal({ card, open, onClose }: { card: ClientCard; open: boolean; o
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`slot-note-${card.id}`}>Note (optional)</Label>
-          <Input id={`slot-note-${card.id}`} className="h-10" placeholder="Panel, video link, location…" {...register('note')} />
+          <Input id={`slot-note-${card.id}`}  placeholder="Panel, video link, location…" {...register('note')} />
         </div>
         <FieldError message={propose.isError ? propose.error.message : undefined} />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" className="h-10" onClick={onClose}>Cancel</Button>
-          <Button type="submit" className="h-10" disabled={propose.isPending}>{propose.isPending ? 'Sending…' : 'Propose time'}</Button>
+          <Button type="button" variant="outline"  onClick={onClose}>Cancel</Button>
+          <Button type="submit"  disabled={propose.isPending}>{propose.isPending ? 'Sending…' : 'Propose time'}</Button>
         </div>
       </form>
     </Modal>
   )
 }
 
-/** Shortlist / reject / propose interview, sized for thumbs. Only shows what is possible at this stage. */
-export function DecisionActions({ card, compact = false }: { card: ClientCard; compact?: boolean }) {
+/** Shortlist / propose slot / reject: 48px targets, only what is possible at this stage. Reject opens a bottom sheet for the reason. */
+export function DecisionActions({ card }: { card: ClientCard }) {
   const { decide } = usePortalActions(card.id)
   const [reject, setReject] = useState(false)
   const [slot, setSlot] = useState(false)
   const open = card.stage === 'submitted' || card.stage === 'shortlisted'
   const canInterview = open || card.stage === 'interview'
-  if (!open && !canInterview)
-    return null
+  if (!canInterview) return null
   return (
     <div className="space-y-2">
-      <div className={compact ? 'grid grid-cols-2 gap-2' : 'flex flex-wrap gap-2'}>
+      <div className="grid grid-cols-2 gap-2">
         {card.stage === 'submitted' && (
-          <Button className="h-11 flex-1 text-base sm:text-sm" onClick={() => decide.mutate({ decision: 'shortlist' })} disabled={decide.isPending}>
+          <Button size="lg" className="col-span-2" onClick={() => decide.mutate({ decision: 'shortlist' })} disabled={decide.isPending}>
             <Check /> Shortlist
           </Button>
         )}
-        {canInterview && (
-          <Button variant={card.stage === 'submitted' ? 'outline' : 'default'} className="h-11 flex-1 text-base sm:text-sm" onClick={() => setSlot(true)}>
-            <CalendarClock /> {card.stage === 'interview' ? 'Propose another time' : 'Propose interview'}
-          </Button>
-        )}
+        <Button size="lg" variant={card.stage === 'submitted' ? 'secondary' : 'primary'} className={open ? '' : 'col-span-2'} onClick={() => setSlot(true)}>
+          <CalendarClock /> {card.stage === 'interview' ? 'Propose another time' : 'Propose slot'}
+        </Button>
         {open && (
-          <Button variant="outline" className="h-11 flex-1 text-base text-destructive sm:text-sm" onClick={() => setReject(true)}>
+          <Button size="lg" variant="danger" onClick={() => setReject(true)}>
             <X /> Reject
           </Button>
         )}
@@ -121,14 +118,14 @@ export function DecisionActions({ card, compact = false }: { card: ClientCard; c
 export function DecisionStatus({ card }: { card: ClientCard }) {
   const slot = card.slots.find((s) => s.status !== 'declined')
   if (card.stage === 'rejected')
-    return <p className="rounded-lg bg-muted/60 p-2.5 text-sm">Rejected{card.decision?.reason && <span className="block text-muted-foreground">Reason: {card.decision.reason}</span>}</p>
+    return <p className="rounded-input bg-surface-2 p-3 text-small">Rejected{card.decision?.reason && <span className="block text-muted-foreground">Reason: {card.decision.reason}</span>}</p>
   if (slot && ['interview', 'offered', 'joined'].includes(card.stage))
     return (
-      <p className="rounded-lg bg-surface-2 p-2.5 text-sm">
+      <p className="rounded-input bg-surface-2 p-3 text-small">
         Interview proposed for <strong>{dateTime(slot.starts_at)}</strong> · {slot.duration_minutes} min · {slot.status}
         {['offered', 'joined'].includes(card.stage) && <span className="block text-muted-foreground">Now at the {card.stage} stage.</span>}
       </p>
     )
-  if (card.stage === 'shortlisted') return <p className="rounded-lg bg-surface-2 p-2.5 text-sm">You shortlisted this candidate.</p>
+  if (card.stage === 'shortlisted') return <p className="rounded-input bg-surface-2 p-3 text-small">You shortlisted this candidate.</p>
   return null
 }

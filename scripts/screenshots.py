@@ -55,19 +55,22 @@ def run(name: str, view: str, page: Page) -> None:
         sign_in(page, RECRUITER)
         open_ranked(page)
         page.locator("ul > li a[href^='/candidates/']").first.click()
-        page.wait_for_selector("pre")
+        page.wait_for_selector("pre", state="attached")
     elif name == "portal":
         sign_in(page, CLIENT)
     elif name == "portal-candidate":
         sign_in(page, CLIENT)
         page.locator("a[href^='/portal/candidates/']").first.click()
-        page.wait_for_selector("pre")
+        page.wait_for_selector("pre", state="attached")
     else:
         raise SystemExit(f"unknown screen: {name}")
     settle(page)
     full = name != "login" or view == "phone"
     dims = page.evaluate("[document.documentElement.scrollWidth, innerWidth, document.documentElement.scrollHeight, innerHeight]")
     print(f"{name}-{view}: scrollW={dims[0]} viewW={dims[1]} scrollH={dims[2]} viewH={dims[3]}" + ("  HORIZONTAL SCROLL" if dims[0] > dims[1] else ""))
+    if dims[0] > dims[1]:
+        wide = page.evaluate("""[...document.querySelectorAll('body *')].filter(e => e.getBoundingClientRect().right > innerWidth + 0.5).slice(0, 6).map(e => e.tagName + '.' + String(e.className).slice(0, 80))""")
+        print("  overflowing:", wide)
     OUT.mkdir(parents=True, exist_ok=True)
     if CLIP:
         x, y, w, h = (float(v) for v in CLIP.split(","))

@@ -26,12 +26,12 @@ export function AppShell({
   const { data: user } = useMe()
   const logout = useLogout()
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-ws">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-background focus:p-2">
         Skip to content
       </a>
       <header className="sticky top-0 z-20 h-(--header-h) border-b bg-ws">
-        <div className={cn('mx-auto flex items-center justify-between gap-3 px-4 py-2.5', narrow ? 'max-w-2xl' : 'max-w-6xl')}>
+        <div className={cn('mx-auto flex h-full items-center justify-between gap-3 px-(--gutter)', narrow ? 'max-w-2xl' : 'max-w-6xl')}>
           <div className="flex items-center gap-5">
             <Link to="/" className="flex items-center gap-1.5 font-semibold tracking-tight">
               <ShieldCheck className="size-4 text-primary" aria-hidden /> FairRank
@@ -51,11 +51,11 @@ export function AppShell({
                 ))}
             </nav>
           </div>
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-small">
             {extra}
             <span className="hidden text-right leading-tight text-muted-foreground md:block">
               <span className="block text-foreground">{user?.full_name}</span>
-              <span className="block text-xs">
+              <span className="block text-small">
                 {user ? ROLE_LABEL[user.role] : ''}
                 {user?.client_org ? ` · ${user.client_org.name}` : ''}
               </span>
@@ -66,7 +66,7 @@ export function AppShell({
           </div>
         </div>
       </header>
-      <main id="main" className={cn('mx-auto px-4 pb-24 pt-6 sm:pt-8', narrow ? 'max-w-2xl' : 'max-w-6xl')}>
+      <main id="main" className={cn('mx-auto px-(--gutter) pb-24 pt-6 sm:pt-8', narrow ? 'max-w-2xl' : 'max-w-6xl')}>
         {children}
       </main>
     </div>
@@ -87,14 +87,14 @@ export function PageHeader({
   return (
     <div className="mb-6 space-y-2">
       {back && (
-        <Link to={back.to} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link to={back.to} className="inline-flex items-center gap-1 text-small text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-3.5" aria-hidden /> {back.label}
         </Link>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h1>{title}</h1>
-          {subtitle && <div className="text-sm text-muted-foreground">{subtitle}</div>}
+          {subtitle && <div className="text-small text-muted-foreground">{subtitle}</div>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>

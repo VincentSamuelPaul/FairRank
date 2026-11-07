@@ -78,7 +78,7 @@ function Details({ req, editable }: { req: Requisition; editable: boolean }) {
       {editable && (
         <div className="flex items-center gap-3">
           <Button type="submit" variant="outline" disabled={!isDirty || update.isPending}>{update.isPending ? 'Saving…' : 'Save details'}</Button>
-          {update.isSuccess && !isDirty && <span className="text-sm text-muted-foreground">Saved</span>}
+          {update.isSuccess && !isDirty && <span className="text-small text-muted-foreground">Saved</span>}
           {update.isError && <FieldError message={update.error.message} />}
         </div>
       )}
@@ -126,11 +126,11 @@ function Criteria({ req, editable }: { req: Requisition; editable: boolean }) {
               <FieldError message={errors.criteria?.[i]?.name?.message} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`weight-${i}`} className="text-xs text-muted-foreground">Weight</Label>
+              <Label htmlFor={`weight-${i}`} className="text-small text-muted-foreground">Weight</Label>
               <Input id={`weight-${i}`} type="number" min={1} max={10} disabled={!editable} aria-invalid={!!errors.criteria?.[i]?.weight} {...register(`criteria.${i}.weight`, { valueAsNumber: true })} />
               <FieldError message={errors.criteria?.[i]?.weight?.message} />
             </div>
-            <label className="flex h-8 items-center gap-2 text-sm sm:mt-5">
+            <label className="flex h-8 items-center gap-2 text-small sm:mt-5">
               <input
                 type="checkbox"
                 className="size-4 accent-[var(--primary)]"
@@ -162,12 +162,12 @@ function Criteria({ req, editable }: { req: Requisition; editable: boolean }) {
           <Button type="submit" disabled={save.isPending || (!isDirty && !!card)}>
             {save.isPending ? 'Saving…' : `Save as v${(card?.version ?? 0) + 1}`}
           </Button>
-          <span className="text-xs text-muted-foreground">Total weight {totalWeight}. Saving re-scores every CV against the new version.</span>
+          <span className="text-small text-muted-foreground">Total weight {totalWeight}. Saving re-scores every CV against the new version.</span>
         </div>
       )}
       {save.isError && <FieldError message={save.error.message} />}
       {save.isSuccess && (
-        <p role="status" className="rounded-lg bg-surface-2 p-3 text-sm">
+        <p role="status" className="rounded-lg bg-surface-2 p-3 text-small">
           Saved as v{save.data.version}. {save.data.rescoring > 0 ? `Re-scoring ${save.data.rescoring} CVs now.` : 'No CVs to re-score yet.'}
         </p>
       )}
@@ -187,9 +187,9 @@ export function ScorecardPage() {
     <Async query={query}>
       {(req) => (
         <div className="space-y-8">
-          {state?.warning && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">{state.warning}</p>}
+          {state?.warning && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-small">{state.warning}</p>}
           {state?.fresh && !state.warning && (
-            <p className="flex items-start gap-2 rounded-lg bg-surface-2 p-3 text-sm">
+            <p className="flex items-start gap-2 rounded-lg bg-surface-2 p-3 text-small">
               <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
               Drafted from the JD. Check the criteria, weights and must-haves before you upload CVs: the AI can miss or over-read things.
             </p>
@@ -206,10 +206,10 @@ export function ScorecardPage() {
             <Criteria key={req.scorecard?.id ?? 'none'} req={req} editable={editable} />
           </section>
           <section>
-            <button type="button" className="text-sm text-primary hover:underline" onClick={() => setShowJd((s) => !s)} aria-expanded={showJd}>
+            <button type="button" className="text-small text-primary hover:underline" onClick={() => setShowJd((s) => !s)} aria-expanded={showJd}>
               {showJd ? 'Hide' : 'Show'} the original job description
             </button>
-            {showJd && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-muted/60 p-3 text-sm">{req.jd_text}</p>}
+            {showJd && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-muted/60 p-3 text-small">{req.jd_text}</p>}
           </section>
         </div>
       )}

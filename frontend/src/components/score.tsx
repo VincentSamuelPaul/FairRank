@@ -1,5 +1,5 @@
-import { CircleHelp, Lock, RotateCw } from 'lucide-react'
-import type { Band, CandidateRow, CriterionScore, ScorePayload, Stage } from '@/lib/types'
+import { Lock } from 'lucide-react'
+import type { Band, ScorePayload, Stage } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { CriterionList, ScoreBar } from '@/components/ui/criterion-row'
 import { ScoreRing } from '@/components/ui/score-ring'
@@ -39,41 +39,5 @@ export function MaskedContacts({ contacts }: { contacts: { email: string; phone:
       <p className="tnum">{contacts.phone}</p>
       {contacts.masked && <p className="text-text-2">Contact details unlock when you reach the interview stage.</p>}
     </div>
-  )
-}
-
-/* TEMPORARY: removed when the ranked list moves to CandidateRow (step 5). */
-/** Compact one-line summary of every criterion, for scanning the ranked list. */
-export function CriterionChips({ criteria }: { criteria: CriterionScore[] }) {
-  return (
-    <ul className="flex flex-wrap gap-1.5" aria-label="Criteria">
-      {criteria.map((c) => {
-        const none = c.evidence_status === 'no_evidence'
-        return (
-          <li
-            key={c.criterion_id}
-            title={none ? 'No evidence found in the CV' : c.unverified ? 'Low confidence: unverified' : c.quote}
-            className={cn(
-              'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs ring-1',
-              none ? 'text-muted-foreground ring-foreground/10' : c.points >= 70 ? 'bg-accent text-accent-foreground ring-primary/25' : 'ring-foreground/15',
-            )}
-          >
-            {c.is_must_have && <span className="font-semibold" aria-label="must-have">*</span>}
-            <span className={cn(none && 'line-through decoration-1')}>{c.name}</span>
-            <span className="tabular-nums font-medium">{none ? '—' : c.points}</span>
-            {c.unverified && <CircleHelp className="size-3" aria-label="Unverified" />}
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-export function RetryHint({ row }: { row: Pick<CandidateRow, 'score'> }) {
-  if (row.score.state !== 'failed') return null
-  return (
-    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-      <RotateCw className="size-3" aria-hidden /> {row.score.error || 'Please retry.'}
-    </span>
   )
 }

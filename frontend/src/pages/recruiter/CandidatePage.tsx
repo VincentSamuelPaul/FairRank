@@ -13,6 +13,8 @@ import { FieldError, Hint, Select, Textarea } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
+import { Tooltip } from '@/components/ui/tooltip'
+import { useToast } from '@/components/ui/toast'
 import { post } from '@/lib/api'
 import { useMe } from '@/lib/auth'
 import { dateTime, notice, stageLabel, years } from '@/lib/format'
@@ -54,20 +56,30 @@ function Highlighted({ text, criteria, activeId }: { text: string; criteria: Cri
 
 function SubmitPanel({ c }: { c: CandidateDetail }) {
   const { submit } = useCandidateActions(c.id, c.requisition.id)
+  const { toast } = useToast()
   const { register, handleSubmit } = useForm<{ note: string }>({ defaultValues: { note: '' } })
+  const why = c.can_submit
+    ? null
+    : !c.viewed
+      ? 'Open the CV first. You can submit a candidate once you have read their CV.'
+      : 'Only candidates at the Sourced or Screened stage can be submitted.'
   return (
-    <form className="space-y-3" onSubmit={handleSubmit((v) => submit.mutate(v.note))}>
-      <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Eye className="size-4 text-primary" aria-hidden /> You have opened this CV, so you can submit it.
+    <form className="space-y-3" onSubmit={handleSubmit((v) => submit.mutate(v.note, { onSuccess: () => toast('Submitted to the client with masked contacts', 'ok') }))}>
+      <p className="flex items-center gap-1.5 text-small text-text-2">
+        <Eye className="size-4 text-text-1" aria-hidden /> {c.viewed ? 'You have opened this CV.' : 'You have not opened this CV yet.'}
       </p>
       <div className="space-y-1.5">
         <Label htmlFor="note">Note for the client (optional)</Label>
         <Textarea id="note" rows={2} maxLength={500} placeholder="Why this candidate fits" {...register('note')} />
       </div>
       <FieldError message={submit.isError ? submit.error.message : undefined} />
-      <Button type="submit" className="w-full" disabled={!c.can_submit || submit.isPending}>
-        <Send /> {submit.isPending ? 'Submitting…' : 'Submit to client'}
-      </Button>
+      {why ? (
+        <Tooltip content={why} className="w-full">
+          <Button type="button" className="w-full" disabled><Send /> Submit to client</Button>
+        </Tooltip>
+      ) : (
+        <Button type="submit" arrow className="w-full" disabled={submit.isPending}>{submit.isPending ? 'Submitting…' : 'Submit to client'}</Button>
+      )}
       <Hint>The client sees this candidate with masked contact details. You decide; the score never submits anyone.</Hint>
     </form>
   )
@@ -119,7 +131,7 @@ function SubmissionPanel({ c, canAct }: { c: CandidateDetail; canAct: boolean })
   })
   const sub = c.submission!
   return (
-    <div className="space-y-3 text-sm">
+    <div className="space-y-3 text-small">
       <p>Submitted to the client on {dateTime(sub.submitted_at)}.</p>
       {sub.note && <p className="text-muted-foreground">“{sub.note}”</p>}
       {sub.decisions.map((d, i) => (
@@ -150,10 +162,12 @@ function Detail({ c }: { c: CandidateDetail }) {
   const canAct = user?.role === 'recruiter'
   const { move, retry } = useCandidateActions(c.id, c.requisition.id)
   const [activeId, setActiveId] = useState<number | null>(null)
+  const [tab, setTab] = useState<'evidence' | 'cv' | 'actions'>('evidence')
   const noText = c.raw_text.trim().length === 0
   const select = (crit: CriterionScore) => {
     setActiveId(crit.criterion_id)
-    document.getElementById(`ev-${crit.criterion_id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    setTab('cv') // on a phone the CV is its own tab; on desktop both are visible
+    requestAnimationFrame(() => document.getElementById(`ev-${crit.criterion_id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }))
   }
   const sc = c.score
   return (
@@ -169,12 +183,26 @@ function Detail({ c }: { c: CandidateDetail }) {
         }
         actions={<ScoreBadge score={sc} size="lg" />}
       />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_23rem]">
-        <section aria-label="CV" className="order-2 min-w-0 lg:order-1">
+      <div role="tablist" aria-label="Candidate sections" className="mb-4 grid grid-cols-3 gap-1 rounded-pill border p-1 lg:hidden">
+        {(['evidence', 'cv', 'actions'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setTab(t)}
+            className={cn('h-11 rounded-pill text-small capitalize transition-colors duration-(--dur-fast)', tab === t ? 'bg-accent font-medium text-on-accent' : 'text-text-2')}
+          >
+            {t === 'cv' ? 'CV' : t}
+          </button>
+        ))}
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_26rem]">
+        <section aria-label="CV" className={cn('min-w-0 lg:sticky lg:top-[calc(var(--header-h)+var(--gutter)/2)] lg:block lg:self-start', tab === 'cv' ? 'block' : 'hidden')}>
           <div className="mb-2 flex items-center justify-between gap-3">
-            <h2 className="flex items-center gap-1.5 font-medium"><FileText className="size-4" aria-hidden /> CV text</h2>
+            <h2 className="flex items-center gap-1.5"><FileText className="size-4" aria-hidden /> CV text</h2>
             {c.cv_file_url && (
-              <a href={c.cv_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
+              <a href={c.cv_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-small text-primary hover:underline">
                 Open original {c.cv_file_kind?.toUpperCase()} <ExternalLink className="size-3.5" aria-hidden />
               </a>
             )}
@@ -183,28 +211,28 @@ function Detail({ c }: { c: CandidateDetail }) {
             <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed p-10 text-center">
               <ScanLine className="size-6 text-muted-foreground" aria-hidden />
               <p className="font-medium">Needs manual review</p>
-              <p className="max-w-sm text-sm text-muted-foreground">This file has no readable text (scanned or image-only), so it was not scored. Open the original and judge it yourself. It is not rejected or hidden.</p>
+              <p className="max-w-sm text-small text-muted-foreground">This file has no readable text (scanned or image-only), so it was not scored. Open the original and judge it yourself. It is not rejected or hidden.</p>
             </div>
           ) : (
-            <pre className="max-h-[75vh] overflow-auto whitespace-pre-wrap break-words rounded-xl border bg-card p-4 font-sans text-sm leading-relaxed">
+            <pre className="max-h-[75vh] overflow-auto whitespace-pre-wrap break-words rounded-card border bg-surface-1 p-5 font-sans text-small leading-relaxed">
               <Highlighted text={c.raw_text} criteria={sc.criteria} activeId={activeId} />
             </pre>
           )}
         </section>
 
-        <aside className="order-1 space-y-5 lg:order-2" aria-label="Screening">
-          <section className="space-y-3">
-            <h2 className="font-medium">Why this score</h2>
+        <aside className="space-y-5" aria-label="Screening">
+          <section className={cn('space-y-3 lg:block', tab === 'evidence' ? 'block' : 'hidden')}>
+            <h2 className="">Why this score</h2>
             {sc.state === 'scored' && <EvidenceList criteria={sc.criteria} activeId={activeId} onSelect={select} />}
             {sc.state === 'failed' && (
-              <div role="alert" className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
+              <div role="alert" className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-small">
                 <p className="font-medium">Scoring failed, retry</p>
                 <p className="text-muted-foreground">{sc.error || 'The AI could not score this CV.'} The CV is still here to read.</p>
                 {canAct && <Button size="sm" variant="outline" onClick={() => retry.mutate()} disabled={retry.isPending || retry.isSuccess}>{retry.isSuccess ? 'Queued: refresh in a moment' : 'Retry scoring'}</Button>}
               </div>
             )}
             {['needs_manual_review', 'cv_failed', 'processing', 'pending', 'no_scorecard'].includes(sc.state) && (
-              <p className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
+              <p className="rounded-xl border border-dashed p-3 text-small text-muted-foreground">
                 {sc.state === 'needs_manual_review' && 'No score: a person needs to read this one.'}
                 {sc.state === 'cv_failed' && (sc.error || 'The file could not be read. Upload it again.')}
                 {(sc.state === 'processing' || sc.state === 'pending') && 'Still being processed. Check back in a few seconds.'}
@@ -214,14 +242,15 @@ function Detail({ c }: { c: CandidateDetail }) {
             {sc.state === 'scored' && <Hint>Scored with {sc.model || 'AI'} against scorecard v{sc.scorecard_version}. Name, gender, age, photo and marital status were removed before scoring.</Hint>}
           </section>
 
-          <section className="space-y-3 rounded-xl border p-4">
-            <h2 className="font-medium">Next step</h2>
+          <div className={cn('space-y-5 lg:block', tab === 'actions' ? 'block' : 'hidden')}>
+          <section className="space-y-3 rounded-card border bg-surface-1 p-5">
+            <h2 className="text-body font-medium">Next step</h2>
             {c.submission ? (
               <SubmissionPanel c={c} canAct={canAct} />
             ) : canAct ? (
               <SubmitPanel c={c} />
             ) : (
-              <p className="text-sm text-muted-foreground">Not submitted yet.</p>
+              <p className="text-small text-muted-foreground">Not submitted yet.</p>
             )}
             {canAct && c.allowed_moves.length > 0 && (
               <div className="space-y-1.5 border-t pt-3">
@@ -235,15 +264,15 @@ function Detail({ c }: { c: CandidateDetail }) {
             )}
           </section>
 
-          <section className="space-y-2 rounded-xl border p-4 text-sm">
-            <h2 className="font-medium">Contact</h2>
+          <section className="space-y-2 rounded-card border bg-surface-1 p-5 text-small">
+            <h2 className="text-body font-medium">Contact</h2>
             <p>{c.email || '—'}</p>
             <p>{c.phone || '—'}</p>
-            <p className="text-xs text-muted-foreground">Clients see these masked until the interview stage.</p>
+            <p className="text-small text-muted-foreground">Clients see these masked until the interview stage.</p>
           </section>
 
           {c.duplicate_of && (
-            <p className="flex items-start gap-2 rounded-xl bg-muted/60 p-3 text-sm">
+            <p className="flex items-start gap-2 rounded-xl bg-muted/60 p-3 text-small">
               <Copy className="mt-0.5 size-4 shrink-0" aria-hidden />
               <span>
                 Possible duplicate of{' '}
@@ -253,8 +282,8 @@ function Detail({ c }: { c: CandidateDetail }) {
             </p>
           )}
 
-          <section className="space-y-3 rounded-xl border p-4 text-sm">
-            <h2 className="flex items-center gap-1.5 font-medium"><ShieldCheck className="size-4 text-primary" aria-hidden /> Consent and access</h2>
+          <section className="space-y-3 rounded-card border bg-surface-1 p-5 text-small">
+            <h2 className="flex items-center gap-1.5 text-body font-medium"><ShieldCheck className="size-4 text-primary" aria-hidden /> Consent and access</h2>
             {c.consent.map((k, i) => (
               <p key={i}>
                 Consent recorded {dateTime(k.recorded_at)}: {k.source.toLowerCase()}{k.recorded_by && ` (${k.recorded_by})`}. Purpose: hiring use only.
@@ -272,17 +301,18 @@ function Detail({ c }: { c: CandidateDetail }) {
           </section>
 
           {c.stage_events.length > 0 && (
-            <section className="space-y-2 text-sm">
-              <h2 className="font-medium">History</h2>
+            <section className="space-y-2 text-small">
+              <h2 className="text-body font-medium">History</h2>
               <ol className={cn('space-y-1 border-l pl-3 text-muted-foreground')}>
                 {c.stage_events.map((e, i) => (
                   <li key={i}>
-                    {stageLabel(e.to)} <span className="text-xs">· {e.by} · {dateTime(e.at)}</span>
+                    {stageLabel(e.to)} <span className="text-small">· {e.by} · {dateTime(e.at)}</span>
                   </li>
                 ))}
               </ol>
             </section>
           )}
+          </div>
         </aside>
       </div>
     </>

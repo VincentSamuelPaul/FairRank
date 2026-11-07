@@ -20,11 +20,11 @@ export function CriterionRow({ criterion: c, active = false, onSelect, defaultEx
   const [open, setOpen] = useState(defaultExpanded)
   const long = !none && c.quote.length > LONG
   return (
-    <li id={`ev-${c.criterion_id}`} className={cn('space-y-2 p-4', active && 'bg-surface-2')}>
+    <li id={`crit-${c.criterion_id}`} className={cn('space-y-2 p-4', active && 'bg-surface-2')}>
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-body font-medium">
           {c.name}
-          <span className="ml-2 text-micro font-medium uppercase text-text-2">{c.is_must_have ? 'Must-have' : 'Nice-to-have'}</span>
+          <span className="ml-2 whitespace-nowrap text-micro font-medium uppercase text-text-2">{c.is_must_have ? 'Must-have' : 'Nice-to-have'}</span>
         </p>
         <span className="tnum text-body font-medium">{none ? '—' : c.points}</span>
       </div>
@@ -36,6 +36,7 @@ export function CriterionRow({ criterion: c, active = false, onSelect, defaultEx
         unverified={c.unverified}
         clamp={long && !open}
         active={active}
+        showCriterion={false}
         onSelect={onSelect && !none && c.span ? () => onSelect(c) : undefined}
       />
       {long && (

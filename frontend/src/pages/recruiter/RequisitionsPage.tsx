@@ -66,7 +66,7 @@ function NewRequisition({ open, onClose }: { open: boolean; onClose: () => void 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="jd_text">Job description</Label>
-            <button type="button" className="text-xs text-primary hover:underline" onClick={() => setValue('jd_text', EXAMPLE_JD, { shouldValidate: true })}>
+            <button type="button" className="text-small text-primary hover:underline" onClick={() => setValue('jd_text', EXAMPLE_JD, { shouldValidate: true })}>
               Use the example JD
             </button>
           </div>
@@ -114,27 +114,27 @@ export function RequisitionsPage() {
           <ul className="grid gap-3 sm:grid-cols-2">
             {reqs.map((r) => (
               <li key={r.id}>
-                <Link to={`/requisitions/${r.id}`} className="block h-full rounded-xl border p-4 transition-colors hover:border-primary/50 hover:bg-surface-2">
+                <Link to={`/requisitions/${r.id}`} className="block h-full rounded-card border bg-surface-1 p-5 transition-colors hover:border-primary/50 hover:bg-surface-2">
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="font-medium">{r.title}</h2>
-                    <span className="shrink-0 text-xs text-muted-foreground">v{r.scorecard_version ?? '–'}</span>
+                    <span className="shrink-0 text-small text-muted-foreground">v{r.scorecard_version ?? '–'}</span>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-1 text-small text-muted-foreground">
                     {r.client.name}
                     {r.location && ` · ${r.location}`}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-small text-muted-foreground">
                     {r.exp_min_years !== null && `${years(r.exp_min_years)}–${years(r.exp_max_years)}`}
                     {r.notice_max_days !== null && ` · notice ≤ ${notice(r.notice_max_days)}`}
                   </p>
-                  <div className="mt-3 flex gap-4 text-sm">
+                  <div className="mt-3 flex gap-4 text-small">
                     <span>
                       <strong className="tabular-nums">{r.counts?.candidates ?? 0}</strong> CVs
                     </span>
                     <span>
                       <strong className="tabular-nums">{r.counts?.submitted ?? 0}</strong> submitted
                     </span>
-                    <span className="ml-auto text-xs text-muted-foreground">{dateOnly(r.created_at)}</span>
+                    <span className="ml-auto text-small text-muted-foreground">{dateOnly(r.created_at)}</span>
                   </div>
                 </Link>
               </li>

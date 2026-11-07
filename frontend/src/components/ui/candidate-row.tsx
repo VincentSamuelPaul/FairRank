@@ -93,9 +93,13 @@ export function CandidateRow({ row, rank, actions, uploadTo = 'upload' }: { row:
       </div>
 
       <div className="col-span-2 min-w-0 space-y-3 md:col-span-1 md:col-start-2">
-        {top.map((c) => (
-          <EvidenceQuote key={c.criterion_id} criterion={c.name} quote={c.quote} status="verified" unverified={c.unverified} clamp />
-        ))}
+        {top.length > 0 && (
+          <div className="grid gap-3 md:grid-cols-2 md:gap-5">
+            {top.map((c) => (
+              <EvidenceQuote key={c.criterion_id} criterion={c.name} quote={c.quote} status="verified" unverified={c.unverified} clamp={2} />
+            ))}
+          </div>
+        )}
         {scored && top.length === 0 && <p className="text-small text-text-2">No evidence found for any criterion. Read the CV yourself.</p>}
         {scored && row.score.missing_must_haves.length > 0 && (
           <p className="text-small text-text-2">No evidence found for: {row.score.missing_must_haves.join(', ')}</p>

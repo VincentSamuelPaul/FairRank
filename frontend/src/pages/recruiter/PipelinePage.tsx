@@ -15,31 +15,31 @@ export function PipelineBoard({ reqId }: { reqId: string }) {
   const canMove = user?.role === 'recruiter'
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-small text-muted-foreground">
         Candidates move on their own when a CV is screened, when you submit, and when the client decides. A score never moves anyone.
       </p>
-      {move.isError && <p role="alert" className="text-sm text-destructive">{move.error.message}</p>}
+      {move.isError && <p role="alert" className="text-small text-destructive">{move.error.message}</p>}
       <Async query={query} isEmpty={(d) => d.columns.every((c) => c.candidates.length === 0)} empty={<EmptyState title="Nobody in the pipeline yet">Upload CVs to start.</EmptyState>}>
         {(data) => (
           <div className="-mx-4 overflow-x-auto px-4 pb-4">
             <div className="flex gap-3" style={{ minWidth: 'max-content' }}>
               {data.columns.map((col) => (
                 <section key={col.stage} aria-label={col.label} className="w-60 shrink-0 rounded-xl bg-muted/50 p-2">
-                  <h3 className="flex items-center justify-between px-2 py-1.5 text-sm font-medium">
+                  <h3 className="flex items-center justify-between px-2 py-1.5 text-small font-medium">
                     {col.label}
-                    <span className="rounded-full bg-background px-2 text-xs tabular-nums ring-1 ring-foreground/10">{col.candidates.length}</span>
+                    <span className="rounded-full bg-background px-2 text-small tabular-nums ring-1 ring-foreground/10">{col.candidates.length}</span>
                   </h3>
                   <ul className="space-y-2">
-                    {col.candidates.length === 0 && <li className="px-2 py-4 text-center text-xs text-muted-foreground">No one here</li>}
+                    {col.candidates.length === 0 && <li className="px-2 py-4 text-center text-small text-muted-foreground">No one here</li>}
                     {col.candidates.map((c) => (
-                      <li key={c.id} className="space-y-2 rounded-lg border bg-background p-3 text-sm">
+                      <li key={c.id} className="space-y-2 rounded-lg border bg-background p-3 text-small">
                         <Link to={`/candidates/${c.id}`} className="block font-medium hover:underline">{c.full_name}</Link>
-                        <p className="truncate text-xs text-muted-foreground">{c.current_role || c.external_id}</p>
+                        <p className="truncate text-small text-muted-foreground">{c.current_role || c.external_id}</p>
                         <div className="flex items-center justify-between">
                           {c.band && c.score !== null ? (
                             <span className="flex items-center gap-1.5"><span className="font-semibold tabular-nums">{Math.round(c.score)}</span><BandPill band={c.band} /></span>
                           ) : (
-                            <span className="text-xs text-muted-foreground">{c.state === 'needs_manual_review' ? 'Manual review' : 'Not scored'}</span>
+                            <span className="text-small text-muted-foreground">{c.state === 'needs_manual_review' ? 'Manual review' : 'Not scored'}</span>
                           )}
                         </div>
                         {canMove && c.allowed_moves.length > 0 && (

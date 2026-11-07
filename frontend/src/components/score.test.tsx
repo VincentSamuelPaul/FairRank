@@ -41,7 +41,7 @@ describe('EvidenceList', () => {
     )
     expect(screen.getByText(/Built Spring Boot services/)).toBeInTheDocument()
     expect(screen.getByText('No evidence found')).toBeInTheDocument()
-    expect(screen.getByText(/Unverified · low confidence/)).toBeInTheDocument()
+    expect(screen.getByText('Unverified')).toBeInTheDocument()
   })
 })
 

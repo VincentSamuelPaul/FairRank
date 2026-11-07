@@ -101,7 +101,7 @@ export function UploadPage() {
       >
         <FileUp className="mx-auto size-7 text-muted-foreground" aria-hidden />
         <p className="mt-2 font-medium">Drop PDF or DOCX CVs here</p>
-        <p className="text-sm text-muted-foreground">Up to 500 files, 5 MB each. Scanned PDFs are accepted but flagged for manual review.</p>
+        <p className="text-small text-muted-foreground">Up to 500 files, 5 MB each. Scanned PDFs are accepted but flagged for manual review.</p>
         <input
           ref={input}
           type="file"
@@ -117,7 +117,7 @@ export function UploadPage() {
       </div>
 
       {skipped.length > 0 && (
-        <ul className="space-y-1 rounded-lg bg-muted/60 p-3 text-sm" aria-label="Skipped files">
+        <ul className="space-y-1 rounded-lg bg-muted/60 p-3 text-small" aria-label="Skipped files">
           {skipped.map((s, i) => (
             <li key={i} className="flex gap-2">
               <TriangleAlert className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -130,23 +130,23 @@ export function UploadPage() {
       )}
 
       {files.length > 0 && (
-        <section className="space-y-4 rounded-xl border p-4">
+        <section className="space-y-4 rounded-card border bg-surface-1 p-5">
           <p className="font-medium">
             {files.length} file{files.length > 1 ? 's' : ''} ready
           </p>
-          <ul className="max-h-40 space-y-0.5 overflow-auto text-sm text-muted-foreground">
+          <ul className="max-h-40 space-y-0.5 overflow-auto text-small text-muted-foreground">
             {files.map((f, i) => (
               <li key={i} className="truncate">{f.name}</li>
             ))}
           </ul>
-          <label className="flex items-start gap-2.5 rounded-lg bg-surface-2 p-3 text-sm">
+          <label className="flex items-start gap-2.5 rounded-lg bg-surface-2 p-3 text-small">
             <input type="checkbox" className="mt-0.5 size-4 accent-[var(--primary)]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             <span>
               <span className="flex items-center gap-1.5 font-medium"><ShieldCheck className="size-4 text-primary" aria-hidden /> Consent is on record</span>
               These candidates have agreed to their CV being used for this hiring process only (DPDP Act 2023). A consent entry is recorded for each one, on their behalf.
             </span>
           </label>
-          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          {error && <p role="alert" className="text-small text-destructive">{error}</p>}
           <div className="flex items-center gap-3">
             <Button onClick={start} disabled={!consent || busy}>
               {busy ? <><Spinner /> Uploading {sent}/{files.length}</> : `Upload ${files.length} file${files.length > 1 ? 's' : ''}`}
@@ -161,7 +161,7 @@ export function UploadPage() {
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2 className="font-medium">{finished ? 'Done' : 'Processing'}</h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-small text-muted-foreground">
                 {done} of {total} processed · {counts.ok} scored · {counts.warn} flagged · {counts.bad} failed
               </p>
             </div>
@@ -170,10 +170,10 @@ export function UploadPage() {
           <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Processing progress">
             <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
           </div>
-          {status.isError && <p role="alert" className="text-sm text-destructive">Could not refresh progress. {status.error.message}</p>}
+          {status.isError && <p role="alert" className="text-small text-destructive">Could not refresh progress. {status.error.message}</p>}
           <ul className="divide-y rounded-xl border">
             {rejected.map((r, i) => (
-              <li key={`r${i}`} className="flex items-start justify-between gap-3 p-3 text-sm">
+              <li key={`r${i}`} className="flex items-start justify-between gap-3 p-3 text-small">
                 <span className="truncate">{r.name}</span>
                 <span className="shrink-0 text-destructive">Rejected: {r.reason}</span>
               </li>
@@ -182,11 +182,11 @@ export function UploadPage() {
               const item = items.find((i) => i.candidate_id === a.candidate_id)
               const d = item ? describe(item) : { label: 'Queued', tone: 'busy' as const }
               return (
-                <li key={a.candidate_id} className="flex items-start justify-between gap-3 p-3 text-sm">
+                <li key={a.candidate_id} className="flex items-start justify-between gap-3 p-3 text-small">
                   <div className="min-w-0">
                     <p className="truncate">{a.name}</p>
-                    {item?.full_name && <p className="truncate text-xs text-muted-foreground">{item.full_name}</p>}
-                    {d.detail && <p className="text-xs text-muted-foreground">{d.detail}</p>}
+                    {item?.full_name && <p className="truncate text-small text-muted-foreground">{item.full_name}</p>}
+                    {d.detail && <p className="text-small text-muted-foreground">{d.detail}</p>}
                   </div>
                   <span className={cn('flex shrink-0 items-center gap-1.5 text-right', d.tone === 'bad' && 'text-destructive', d.tone === 'busy' && 'text-muted-foreground')}>
                     {d.tone === 'busy' && <Spinner />}

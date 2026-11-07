@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { homeFor, useMe, type Role } from '@/lib/auth'
 
 export function FullPageMessage({ children }: { children: React.ReactNode }) {
-  return <div className="flex min-h-screen items-center justify-center p-6 text-sm text-muted-foreground">{children}</div>
+  return <div className="flex min-h-screen items-center justify-center p-6 text-small text-muted-foreground">{children}</div>
 }
 
 /** Route guard: signed out -> /login; wrong role -> that user's own home. */
