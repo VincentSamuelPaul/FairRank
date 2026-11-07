@@ -1,36 +1,53 @@
-import { CheckCircle2, FileUp, ShieldCheck, TriangleAlert } from 'lucide-react'
+import { FileUp, RotateCw, ShieldCheck, X } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { BandPill } from '@/components/score'
 import { Spinner } from '@/components/states'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { StatusChip, type ChipTone } from '@/components/ui/status-chip'
+import { useToast } from '@/components/ui/toast'
 import { api } from '@/lib/api'
-import { uploadBatch, useUploadStatus } from '@/lib/queries'
+import { CountUp } from '@/lib/motion'
+import { uploadBatch, useRetryScoring, useUploadStatus } from '@/lib/queries'
 import type { UploadItem } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const MAX_BYTES = 5 * 1024 * 1024
 const CHUNK = 25
 
-interface Skipped {
-  name: string
-  reason: string
+interface Skipped { name: string; reason: string }
+type Tone = 'ok' | 'warn' | 'info' | 'bad' | 'busy'
+interface Look { label: string; tone: Tone; chip: ChipTone; pct: number; detail?: string; retry?: 'rescore' }
+
+/** What a file's status means, how far along it is, and what (if anything) can be retried. */
+function look(item?: UploadItem): Look {
+  if (!item) return { label: 'Queued', tone: 'busy', chip: 'neutral', pct: 10 }
+  if (item.cv_status === 'failed') return { label: 'Failed', tone: 'bad', chip: 'bad', pct: 100, detail: item.note }
+  if (item.cv_status === 'needs_review') return { label: 'Needs review', tone: 'info', chip: 'info', pct: 100, detail: 'No readable text. It will not be scored, and it is not rejected.' }
+  if (item.cv_status === 'queued') return { label: 'Parsing', tone: 'busy', chip: 'neutral', pct: 30 }
+  const scoring = item.score_state === 'pending' || item.score_state === 'processing'
+  if (item.cv_status === 'duplicate') return { label: scoring ? 'Duplicate · scoring' : 'Duplicate', tone: scoring ? 'busy' : 'warn', chip: 'warn', pct: scoring ? 70 : 100, detail: item.note }
+  if (scoring) return { label: 'Scoring', tone: 'busy', chip: 'info', pct: 65 }
+  if (item.score_state === 'failed') return { label: 'Scoring failed', tone: 'bad', chip: 'bad', pct: 100, detail: 'The CV is saved and readable. Retry scoring.', retry: 'rescore' }
+  return { label: 'Scored', tone: 'ok', chip: 'ok', pct: 100 }
 }
 
-function describe(item: UploadItem): { label: string; tone: 'ok' | 'warn' | 'bad' | 'busy'; detail?: string } {
-  if (item.cv_status === 'failed') return { label: 'Failed', tone: 'bad', detail: item.note }
-  if (item.cv_status === 'needs_review') return { label: 'Needs manual review', tone: 'warn', detail: 'No readable text. It will not be scored.' }
-  if (item.cv_status === 'queued') return { label: 'Parsing…', tone: 'busy' }
-  const scoring = item.score_state === 'pending' || item.score_state === 'processing'
-  if (item.cv_status === 'duplicate') return { label: scoring ? 'Duplicate · scoring…' : 'Duplicate', tone: 'warn', detail: item.note }
-  if (scoring) return { label: 'Parsed · scoring…', tone: 'busy' }
-  if (item.score_state === 'failed') return { label: 'Scoring failed, retry from the list', tone: 'bad' }
-  return { label: 'Scored', tone: 'ok' }
+const BAR: Record<Tone, string> = { ok: 'bg-ok', warn: 'bg-warn', info: 'bg-info', bad: 'bg-bad', busy: 'bg-signal' }
+const size = (n: number) => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`)
+
+function FileProgress({ pct, tone, label }: { pct: number; tone: Tone; label: string }) {
+  return (
+    <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} className="h-1 overflow-hidden rounded-pill bg-surface-2">
+      <div className={cn('h-full rounded-pill transition-[width] duration-(--dur-base) ease-ui', BAR[tone])} style={{ width: `${pct}%` }} />
+    </div>
+  )
 }
 
 export function UploadPage() {
   const { id = '' } = useParams()
   const input = useRef<HTMLInputElement>(null)
+  const kept = useRef(new Map<string, File>()) // so a rejected file can be retried without choosing it again
+  const { toast } = useToast()
+  const rescore = useRetryScoring()
   const [files, setFiles] = useState<File[]>([])
   const [skipped, setSkipped] = useState<Skipped[]>([])
   const [consent, setConsent] = useState(false)
@@ -40,6 +57,7 @@ export function UploadPage() {
   const [error, setError] = useState('')
   const [accepted, setAccepted] = useState<{ candidate_id: string; name: string }[]>([])
   const [rejected, setRejected] = useState<Skipped[]>([])
+  const [retrying, setRetrying] = useState<string | null>(null)
   const ids = useMemo(() => accepted.map((a) => a.candidate_id), [accepted])
   const status = useUploadStatus(id, ids)
 
@@ -55,53 +73,77 @@ export function UploadPage() {
     setSkipped((prev) => [...prev, ...bad])
   }
 
+  async function send(batch: File[]) {
+    batch.forEach((f) => kept.current.set(f.name, f))
+    const acc: typeof accepted = []
+    const rej: Skipped[] = []
+    for (let i = 0; i < batch.length; i += CHUNK) {
+      const res = await uploadBatch(id, batch.slice(i, i + CHUNK))
+      acc.push(...res.accepted)
+      rej.push(...res.rejected.map((r) => ({ name: r.name, reason: r.reason })))
+      setSent(Math.min(i + CHUNK, batch.length))
+    }
+    setAccepted((p) => [...p, ...acc])
+    setRejected((p) => [...p, ...rej])
+  }
+
   async function start() {
     setBusy(true)
     setError('')
     setSent(0)
-    const acc: typeof accepted = []
-    const rej: Skipped[] = []
     try {
       await api('/api/auth/csrf/')
-      for (let i = 0; i < files.length; i += CHUNK) {
-        const res = await uploadBatch(id, files.slice(i, i + CHUNK))
-        acc.push(...res.accepted)
-        rej.push(...res.rejected.map((r) => ({ name: r.name, reason: r.reason })))
-        setSent(Math.min(i + CHUNK, files.length))
-      }
+      await send(files)
       setFiles([])
       setConsent(false)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload failed.')
     } finally {
-      setAccepted((p) => [...p, ...acc])
-      setRejected((p) => [...p, ...rej])
       setBusy(false)
     }
   }
 
+  async function retryUpload(name: string) {
+    const f = kept.current.get(name)
+    if (!f) return toast('Choose that file again to retry it.', 'bad')
+    setRetrying(name)
+    try {
+      await api('/api/auth/csrf/')
+      setRejected((p) => p.filter((r) => r.name !== name))
+      await send([f])
+    } catch (e) {
+      setRejected((p) => [...p, { name, reason: e instanceof Error ? e.message : 'Upload failed.' }])
+    } finally {
+      setRetrying(null)
+    }
+  }
+
   const items = status.data?.items ?? []
-  const done = items.filter((i) => describe(i).tone !== 'busy').length
+  const looks = items.map(look)
+  const done = looks.filter((l) => l.tone !== 'busy').length
   const total = accepted.length
   const pct = total ? Math.round((done / total) * 100) : 0
   const counts = {
-    ok: items.filter((i) => describe(i).tone === 'ok').length,
-    warn: items.filter((i) => describe(i).tone === 'warn').length,
-    bad: items.filter((i) => describe(i).tone === 'bad').length + rejected.length,
+    ok: looks.filter((l) => l.tone === 'ok').length,
+    warn: looks.filter((l) => l.tone === 'warn' || l.tone === 'info').length,
+    bad: looks.filter((l) => l.tone === 'bad').length + rejected.length,
   }
   const finished = total > 0 && !status.data?.in_progress && done === total
 
   return (
     <div className="space-y-6">
       <div
+        data-drag={drag}
         onDragOver={(e) => { e.preventDefault(); setDrag(true) }}
         onDragLeave={() => setDrag(false)}
         onDrop={(e) => { e.preventDefault(); setDrag(false); add(e.dataTransfer.files) }}
-        className={cn('rounded-xl border-2 border-dashed p-8 text-center transition-colors', drag ? 'border-primary bg-surface-2' : 'border-border')}
+        className={cn('dash-border rounded-card px-6 py-14 text-center transition-colors duration-(--dur-fast) sm:py-16', drag ? 'bg-surface-1' : 'bg-surface-panel')}
       >
-        <FileUp className="mx-auto size-7 text-muted-foreground" aria-hidden />
-        <p className="mt-2 font-medium">Drop PDF or DOCX CVs here</p>
-        <p className="text-small text-muted-foreground">Up to 500 files, 5 MB each. Scanned PDFs are accepted but flagged for manual review.</p>
+        <span className={cn('mx-auto grid size-14 place-items-center rounded-pill border transition-colors duration-(--dur-fast)', drag ? 'border-signal text-signal' : 'bg-surface-1 text-text-2')}>
+          <FileUp className="size-6" aria-hidden />
+        </span>
+        <p className="mt-4 text-h2">{drag ? 'Drop to add' : 'Drop PDF or DOCX CVs here'}</p>
+        <p className="mx-auto mt-1 max-w-md text-small text-text-2">Up to 500 files, 5 MB each. Scanned PDFs are accepted but flagged for manual review.</p>
         <input
           ref={input}
           type="file"
@@ -111,45 +153,43 @@ export function UploadPage() {
           aria-label="Choose CV files"
           onChange={(e) => { if (e.target.files) add(e.target.files); e.target.value = '' }}
         />
-        <Button variant="outline" className="mt-4" onClick={() => input.current?.click()}>
-          Choose files
-        </Button>
+        <Button variant="secondary" className="mt-5" onClick={() => input.current?.click()}>Choose files</Button>
       </div>
 
       {skipped.length > 0 && (
-        <ul className="space-y-1 rounded-lg bg-muted/60 p-3 text-small" aria-label="Skipped files">
+        <ul className="space-y-1.5 rounded-card border bg-surface-1 p-4 text-small" aria-label="Skipped files">
           {skipped.map((s, i) => (
-            <li key={i} className="flex gap-2">
-              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <span>
-                <strong className="font-medium">{s.name}</strong> skipped: {s.reason}
-              </span>
+            <li key={i} className="flex items-start gap-2">
+              <StatusChip tone="warn">Skipped</StatusChip>
+              <span className="min-w-0 truncate"><strong className="font-medium">{s.name}</strong> <span className="text-text-2">{s.reason}</span></span>
             </li>
           ))}
         </ul>
       )}
 
       {files.length > 0 && (
-        <section className="space-y-4 rounded-card border bg-surface-1 p-5">
-          <p className="font-medium">
-            {files.length} file{files.length > 1 ? 's' : ''} ready
-          </p>
-          <ul className="max-h-40 space-y-0.5 overflow-auto text-small text-muted-foreground">
+        <section className="surface-card space-y-4 rounded-card border p-5">
+          <p className="text-body font-medium"><span className="tnum">{files.length}</span> file{files.length > 1 ? 's' : ''} ready</p>
+          <ul className="max-h-56 divide-y overflow-auto rounded-input border bg-surface-panel text-small">
             {files.map((f, i) => (
-              <li key={i} className="truncate">{f.name}</li>
+              <li key={`${f.name}-${i}`} className="flex items-center gap-3 px-3 py-2">
+                <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                <span className="tnum shrink-0 text-text-2">{size(f.size)}</span>
+                <Button variant="ghost" size="icon-xs" aria-label={`Remove ${f.name}`} disabled={busy} onClick={() => setFiles((p) => p.filter((_, n) => n !== i))}><X /></Button>
+              </li>
             ))}
           </ul>
-          <label className="flex items-start gap-2.5 rounded-lg bg-surface-2 p-3 text-small">
-            <input type="checkbox" className="mt-0.5 size-4 accent-[var(--primary)]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+          <label className="flex items-start gap-3 rounded-input border bg-surface-panel p-3.5 text-small">
+            <input type="checkbox" className="mt-0.5 size-4 accent-[var(--accent)]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             <span>
-              <span className="flex items-center gap-1.5 font-medium"><ShieldCheck className="size-4 text-primary" aria-hidden /> Consent is on record</span>
-              These candidates have agreed to their CV being used for this hiring process only (DPDP Act 2023). A consent entry is recorded for each one, on their behalf.
+              <span className="flex items-center gap-1.5 font-medium"><ShieldCheck className="size-4" aria-hidden /> Consent is on record</span>
+              <span className="text-text-2">These candidates have agreed to their CV being used for this hiring process only (DPDP Act 2023). A consent entry is recorded for each one, on their behalf.</span>
             </span>
           </label>
-          {error && <p role="alert" className="text-small text-destructive">{error}</p>}
-          <div className="flex items-center gap-3">
-            <Button onClick={start} disabled={!consent || busy}>
-              {busy ? <><Spinner /> Uploading {sent}/{files.length}</> : `Upload ${files.length} file${files.length > 1 ? 's' : ''}`}
+          {error && <p role="alert" className="text-small text-bad">{error}</p>}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={start} loading={busy} disabled={!consent} disabledReason="Tick the consent box first">
+              {busy ? `Uploading ${sent}/${files.length}` : `Upload ${files.length} file${files.length > 1 ? 's' : ''}`}
             </Button>
             <Button variant="ghost" onClick={() => setFiles([])} disabled={busy}>Clear</Button>
           </div>
@@ -157,44 +197,51 @@ export function UploadPage() {
       )}
 
       {(total > 0 || rejected.length > 0) && (
-        <section className="space-y-3" aria-live="polite">
-          <div className="flex items-end justify-between gap-3">
+        <section className="space-y-4" aria-live="polite">
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="font-medium">{finished ? 'Done' : 'Processing'}</h2>
-              <p className="text-small text-muted-foreground">
-                {done} of {total} processed · {counts.ok} scored · {counts.warn} flagged · {counts.bad} failed
+              <h2>{finished ? 'Done' : 'Processing'}</h2>
+              <p className="tnum text-small text-text-2">
+                <CountUp value={done} /> of {total} processed · {counts.ok} scored · {counts.warn} flagged · {counts.bad} failed
               </p>
             </div>
             {finished && <Link to=".." className={buttonVariants({ size: 'sm' })}>View ranked list</Link>}
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Processing progress">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
-          </div>
-          {status.isError && <p role="alert" className="text-small text-destructive">Could not refresh progress. {status.error.message}</p>}
-          <ul className="divide-y rounded-xl border">
+          <FileProgress pct={pct} tone={finished ? 'ok' : 'busy'} label="Overall processing progress" />
+          {status.isError && <p role="alert" className="text-small text-bad">Could not refresh progress. {status.error.message}</p>}
+          <ul className="divide-y overflow-hidden rounded-card border bg-surface-1">
             {rejected.map((r, i) => (
-              <li key={`r${i}`} className="flex items-start justify-between gap-3 p-3 text-small">
-                <span className="truncate">{r.name}</span>
-                <span className="shrink-0 text-destructive">Rejected: {r.reason}</span>
+              <li key={`r${i}`} className="space-y-2 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="min-w-0 flex-1 truncate text-body">{r.name}</span>
+                  <StatusChip tone="bad">Rejected</StatusChip>
+                  <Button variant="secondary" size="sm" loading={retrying === r.name} disabled={!kept.current.has(r.name)} disabledReason="Choose the file again to retry it" onClick={() => retryUpload(r.name)}>
+                    <RotateCw /> Retry
+                  </Button>
+                </div>
+                <FileProgress pct={100} tone="bad" label={`${r.name}: rejected`} />
+                <p className="text-small text-text-2">{r.reason}</p>
               </li>
             ))}
             {accepted.map((a) => {
               const item = items.find((i) => i.candidate_id === a.candidate_id)
-              const d = item ? describe(item) : { label: 'Queued', tone: 'busy' as const }
+              const l = look(item)
               return (
-                <li key={a.candidate_id} className="flex items-start justify-between gap-3 p-3 text-small">
-                  <div className="min-w-0">
-                    <p className="truncate">{a.name}</p>
-                    {item?.full_name && <p className="truncate text-small text-muted-foreground">{item.full_name}</p>}
-                    {d.detail && <p className="text-small text-muted-foreground">{d.detail}</p>}
+                <li key={a.candidate_id} className="space-y-2 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-body">{a.name}</p>
+                      {item?.full_name && <p className="truncate text-small text-text-2">{item.full_name}</p>}
+                    </div>
+                    <StatusChip tone={l.chip}>{l.tone === 'busy' && <Spinner className="size-3" />}{l.label}</StatusChip>
+                    {l.retry === 'rescore' && (
+                      <Button variant="secondary" size="sm" loading={rescore.isPending && rescore.variables === a.candidate_id} onClick={() => rescore.mutate(a.candidate_id, { onSuccess: () => toast('Scoring queued.', 'info') })}>
+                        <RotateCw /> Retry
+                      </Button>
+                    )}
                   </div>
-                  <span className={cn('flex shrink-0 items-center gap-1.5 text-right', d.tone === 'bad' && 'text-destructive', d.tone === 'busy' && 'text-muted-foreground')}>
-                    {d.tone === 'busy' && <Spinner />}
-                    {d.tone === 'ok' && <CheckCircle2 className="size-4 text-primary" aria-hidden />}
-                    {d.tone === 'warn' && <TriangleAlert className="size-4" aria-hidden />}
-                    {d.label}
-                    {d.tone === 'ok' && item?.band && <BandPill band={item.band} />}
-                  </span>
+                  <FileProgress pct={l.pct} tone={l.tone} label={`${a.name}: ${l.label}`} />
+                  {l.detail && <p className="text-small text-text-2">{l.detail}</p>}
                 </li>
               )
             })}

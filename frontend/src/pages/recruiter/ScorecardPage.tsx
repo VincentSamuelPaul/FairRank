@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus, Sparkles, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { GripVertical, Minus, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { useLocation, useParams } from 'react-router-dom'
 import { z } from 'zod'
@@ -8,10 +8,12 @@ import { Async } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { FieldError, Hint } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { useToast } from '@/components/ui/toast'
 import { Label } from '@/components/ui/label'
 import { useMe } from '@/lib/auth'
 import { useRequisition, useSaveScorecard, useUpdateRequisition } from '@/lib/queries'
 import type { Requisition } from '@/lib/types'
+import { cn } from '@/lib/utils'
 
 const optionalNumber = z.preprocess((v) => (v === '' || v === null || Number.isNaN(v) ? null : Number(v)), z.number().min(0).nullable())
 
@@ -99,75 +101,174 @@ const criteriaSchema = z.object({
 })
 type CriteriaValues = z.infer<typeof criteriaSchema>
 
+type Row = CriteriaValues['criteria'][number]
+const MAX_STEP = 5
+
+/** Must-have / Nice-to-have as a two-option toggle. */
+function Segmented({ value, onChange, disabled, label }: { value: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {
+  const opt = (on: boolean, text: string) => (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={value === on}
+      disabled={disabled}
+      onClick={() => onChange(on)}
+      className={cn('h-9 rounded-pill px-3.5 text-small transition-colors duration-(--dur-fast) disabled:opacity-50', value === on ? 'bg-accent font-medium text-on-accent' : 'text-text-2 hover:text-text-1')}
+    >
+      {text}
+    </button>
+  )
+  return (
+    <div role="radiogroup" aria-label={label} className="inline-flex rounded-pill border bg-surface-panel p-0.5">
+      {opt(true, 'Must-have')}
+      {opt(false, 'Nice-to-have')}
+    </div>
+  )
+}
+
+/** Weight 1 to 5 (the server accepts up to 10; older cards above 5 still display and can be lowered). */
+function Stepper({ value, onChange, disabled, label }: { value: number; onChange: (v: number) => void; disabled?: boolean; label: string }) {
+  const btn = 'grid size-9 place-items-center rounded-pill border border-border-strong transition-colors duration-(--dur-fast) hover:bg-surface-2 disabled:pointer-events-none disabled:opacity-40'
+  return (
+    <div role="group" aria-label={`Weight of ${label}`} className="inline-flex items-center gap-1.5">
+      <button type="button" className={btn} disabled={disabled || value <= 1} onClick={() => onChange(value - 1)} aria-label={`Decrease weight of ${label}`}><Minus className="size-4" /></button>
+      <span className="tnum w-6 text-center text-body font-medium" aria-live="polite">{value}</span>
+      <button type="button" className={btn} disabled={disabled || value >= MAX_STEP} onClick={() => onChange(value + 1)} aria-label={`Increase weight of ${label}`}><Plus className="size-4" /></button>
+    </div>
+  )
+}
+
+/** Live: each criterion's share of the total weight (cream = must-have), and how much of the score rides on must-haves. */
+function WeightMeter({ rows }: { rows: Row[] }) {
+  const total = rows.reduce((t, r) => t + (Number(r.weight) || 0), 0)
+  const must = rows.filter((r) => r.is_must_have).reduce((t, r) => t + (Number(r.weight) || 0), 0)
+  const pct = total ? Math.round((must / total) * 100) : 0
+  return (
+    <div className="surface-card space-y-2.5 rounded-card border p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-small font-medium text-text-2">Weights total</p>
+        <p className="tnum text-h2">{total}</p>
+      </div>
+      <div role="img" aria-label={`${rows.length} criteria, total weight ${total}; must-haves carry ${pct}% of the score`} className="flex h-2 gap-0.5 overflow-hidden rounded-pill bg-surface-2">
+        {rows.map((r, i) => <span key={i} className={cn('h-full transition-[flex-grow] duration-(--dur-base)', r.is_must_have ? 'bg-accent' : 'bg-text-3')} style={{ flexGrow: Math.max(Number(r.weight) || 0, 0.01) }} />)}
+      </div>
+      <p className="tnum text-small text-text-2">
+        <span className="mr-1 inline-block size-2 rounded-pill bg-accent align-baseline" aria-hidden /> Must-haves carry {pct}% of the score
+        <span className="mx-2" aria-hidden>·</span>
+        <span className="mr-1 inline-block size-2 rounded-pill bg-text-3 align-baseline" aria-hidden /> Nice-to-haves {100 - pct}%
+      </p>
+    </div>
+  )
+}
+
 function Criteria({ req, editable }: { req: Requisition; editable: boolean }) {
   const save = useSaveScorecard(req.id)
+  const { toast } = useToast()
   const card = req.scorecard
-  const { register, control, handleSubmit, setValue, formState: { errors, isDirty }, reset } = useForm<CriteriaValues>({
+  const { register, control, handleSubmit, setValue, getValues, formState: { errors, isDirty }, reset } = useForm<CriteriaValues>({
     resolver: zodResolver(criteriaSchema),
     defaultValues: { criteria: (card?.criteria ?? []).map(({ name, description, weight, is_must_have }) => ({ name, description, weight, is_must_have })) },
   })
-  const { fields, append, remove } = useFieldArray({ control, name: 'criteria' })
+  const { fields, append, remove, move, insert } = useFieldArray({ control, name: 'criteria' })
   const watched = useWatch({ control, name: 'criteria' }) ?? []
-  const totalWeight = watched.reduce((s, c) => s + (Number(c.weight) || 0), 0)
+  const [dragFrom, setDragFrom] = useState<number | null>(null)
+  const [over, setOver] = useState<number | null>(null)
+  const armed = useRef(false)
   useEffect(() => {
     if (card) reset({ criteria: card.criteria.map(({ name, description, weight, is_must_have }) => ({ name, description, weight, is_must_have })) })
   }, [card?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-  const rootError = (errors.criteria as { root?: { message?: string }; message?: string } | undefined)
+  const rootError = errors.criteria as { root?: { message?: string }; message?: string } | undefined
+
+  const setMust = (i: number, must: boolean) => {
+    setValue(`criteria.${i}.is_must_have`, must, { shouldDirty: true })
+    const w = watched[i]?.weight
+    if (must && w === 1) setValue(`criteria.${i}.weight`, 3, { shouldDirty: true })
+    if (!must && w === 3) setValue(`criteria.${i}.weight`, 1, { shouldDirty: true })
+  }
+  const drop = (i: number) => {
+    const removed = getValues(`criteria.${i}`)
+    remove(i)
+    toast(`Removed “${removed.name || 'criterion'}”`, 'info', { label: 'Undo', onClick: () => insert(i, removed) })
+  }
 
   return (
     <form noValidate onSubmit={handleSubmit((v) => save.mutate(v.criteria))} className="space-y-4">
+      <WeightMeter rows={watched as Row[]} />
       <ul className="space-y-3">
         {fields.map((f, i) => (
-          <li key={f.id} className="grid gap-3 rounded-xl border p-3 sm:grid-cols-[1fr_5.5rem_auto_auto] sm:items-start">
-            <div className="space-y-1.5">
+          <li
+            key={f.id}
+            draggable={editable}
+            onDragStart={(e) => {
+              if (!armed.current) return e.preventDefault()
+              setDragFrom(i)
+              e.dataTransfer.effectAllowed = 'move'
+            }}
+            onDragOver={(e) => {
+              if (dragFrom === null) return
+              e.preventDefault()
+              setOver(i)
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              if (dragFrom !== null && dragFrom !== i) move(dragFrom, i)
+              setDragFrom(null)
+              setOver(null)
+            }}
+            onDragEnd={() => {
+              armed.current = false
+              setDragFrom(null)
+              setOver(null)
+            }}
+            className={cn('surface-card grid gap-3 rounded-card border p-4 transition-[border-color,opacity] duration-(--dur-fast) sm:grid-cols-[auto_1fr_auto] sm:items-start', over === i && dragFrom !== i && 'border-signal', dragFrom === i && 'opacity-50')}
+          >
+            <button
+              type="button"
+              disabled={!editable}
+              aria-label={`Reorder criterion ${i + 1}: drag, or press the up and down arrow keys`}
+              onPointerDown={() => { armed.current = true }}
+              onPointerUp={() => { armed.current = false }}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowUp' && i > 0) { e.preventDefault(); move(i, i - 1) }
+                if (e.key === 'ArrowDown' && i < fields.length - 1) { e.preventDefault(); move(i, i + 1) }
+              }}
+              className="hidden size-9 cursor-grab place-items-center rounded-input text-text-2 hover:bg-surface-2 hover:text-text-1 active:cursor-grabbing disabled:opacity-40 sm:grid"
+            >
+              <GripVertical className="size-5" aria-hidden />
+            </button>
+            <div className="space-y-2">
               <Label htmlFor={`name-${i}`} className="sr-only">Criterion {i + 1}</Label>
               <Input id={`name-${i}`} placeholder="e.g. Spring Boot" disabled={!editable} aria-invalid={!!errors.criteria?.[i]?.name} {...register(`criteria.${i}.name`)} />
-              <Input aria-label={`Description ${i + 1}`} placeholder="What to look for (optional)" disabled={!editable} className="text-muted-foreground" {...register(`criteria.${i}.description`)} />
-              <FieldError message={errors.criteria?.[i]?.name?.message} />
+              <Input aria-label={`Description ${i + 1}`} placeholder="What to look for (optional)" disabled={!editable} className="h-10 border-transparent bg-transparent text-small text-text-2 hover:border-border focus-visible:bg-surface-2" {...register(`criteria.${i}.description`)} />
+              <FieldError message={errors.criteria?.[i]?.name?.message ?? errors.criteria?.[i]?.weight?.message} />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={`weight-${i}`} className="text-small text-muted-foreground">Weight</Label>
-              <Input id={`weight-${i}`} type="number" min={1} max={10} disabled={!editable} aria-invalid={!!errors.criteria?.[i]?.weight} {...register(`criteria.${i}.weight`, { valueAsNumber: true })} />
-              <FieldError message={errors.criteria?.[i]?.weight?.message} />
+            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+              <Segmented label={`Importance of criterion ${i + 1}`} value={!!watched[i]?.is_must_have} disabled={!editable} onChange={(v) => setMust(i, v)} />
+              <Stepper label={watched[i]?.name || `criterion ${i + 1}`} value={Number(watched[i]?.weight) || 1} disabled={!editable} onChange={(w) => setValue(`criteria.${i}.weight`, w, { shouldDirty: true, shouldValidate: true })} />
+              {editable && (
+                <Button type="button" variant="ghost" size="icon-sm" onClick={() => drop(i)} aria-label={`Remove criterion ${i + 1}`}>
+                  <Trash2 />
+                </Button>
+              )}
             </div>
-            <label className="flex h-8 items-center gap-2 text-small sm:mt-5">
-              <input
-                type="checkbox"
-                className="size-4 accent-[var(--primary)]"
-                disabled={!editable}
-                {...register(`criteria.${i}.is_must_have`, {
-                  onChange: (e) => {
-                    const w = watched[i]?.weight
-                    if (e.target.checked && w === 1) setValue(`criteria.${i}.weight`, 3, { shouldDirty: true })
-                    if (!e.target.checked && w === 3) setValue(`criteria.${i}.weight`, 1, { shouldDirty: true })
-                  },
-                })}
-              />
-              Must-have
-            </label>
-            {editable && (
-              <Button type="button" variant="ghost" size="icon" className="sm:mt-5" onClick={() => remove(i)} aria-label={`Remove criterion ${i + 1}`}>
-                <Trash2 />
-              </Button>
-            )}
           </li>
         ))}
       </ul>
       <FieldError message={rootError?.message ?? rootError?.root?.message} />
       {editable && (
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" variant="outline" onClick={() => append({ name: '', description: '', weight: 1, is_must_have: false })} disabled={fields.length >= 15}>
+          <Button type="button" variant="secondary" onClick={() => append({ name: '', description: '', weight: 1, is_must_have: false })} disabled={fields.length >= 15} disabledReason="A scorecard can have at most 15 criteria">
             <Plus /> Add criterion
           </Button>
-          <Button type="submit" disabled={save.isPending || (!isDirty && !!card)}>
-            {save.isPending ? 'Saving…' : `Save as v${(card?.version ?? 0) + 1}`}
+          <Button type="submit" loading={save.isPending} disabled={!isDirty && !!card} disabledReason="No changes to save yet">
+            {save.isPending ? 'Saving' : `Save as v${(card?.version ?? 0) + 1}`}
           </Button>
-          <span className="text-small text-muted-foreground">Total weight {totalWeight}. Saving re-scores every CV against the new version.</span>
+          <span className="text-small text-text-2">Saving re-scores every CV against the new version.</span>
         </div>
       )}
       {save.isError && <FieldError message={save.error.message} />}
       {save.isSuccess && (
-        <p role="status" className="rounded-lg bg-surface-2 p-3 text-small">
+        <p role="status" className="rounded-input border bg-surface-1 p-3 text-small">
           Saved as v{save.data.version}. {save.data.rescoring > 0 ? `Re-scoring ${save.data.rescoring} CVs now.` : 'No CVs to re-score yet.'}
         </p>
       )}

@@ -144,3 +144,15 @@ Left: rank (large, dim, `--text-3` at heading size) above the ScoreRing with its
 
 ### 7.9 Motion rules
 Numbers count up once on first paint (400ms; 900ms on the login ring). Everything animated is switched off by `prefers-reduced-motion` (durations and delays go to zero), never blocks interaction, and is a no-op in tests. Skeletons use the same grid as the final layout.
+
+### 7.10 Forms
+- **Field**: 48px tall, surface one step LIGHTER than the card it sits on (raised, `--surface-2`; dialogs are cards so their fields are raised too), 1px `--border`, label above at 13px/500 `--text-2`, helper text below in `--text-3`, placeholder `--text-3`. Focus: border `--signal`, 3px ring at `--signal` 25%, 120ms. Error: border `--bad` plus an inline message with an icon (never colour alone). Fields on glass (login) use `--glass-strong`.
+- **Listbox** replaces the native select in the main forms: shows an optional leading icon (the client monogram), keyboard accessible (Arrows, Home/End, Enter/Space, Esc, type-ahead), focus stays on the button, the active option is announced with `aria-activedescendant`.
+- **Textarea** auto-grows and can show a character count; "Use the example JD" is a chip button with a sparkle icon.
+- **New requisition** is a two-step dialog: 1 Client and JD, 2 Drafting scorecard (Reading the JD, Finding must-haves, Setting weights, Checking against the JD, with a progress line). The server answers once, so the first three steps are an estimate and the last completes only when the draft is really ready; the dialog says so. If the AI cannot read the JD it shows an error with Try again (which makes a fresh draft) and Build the scorecard manually. There is no re-draft endpoint yet.
+- **Scorecard editor**: each criterion is a row card with a drag handle (also Up/Down arrow keys), a Must-have / Nice-to-have toggle, a 1 to 5 weight stepper, inline delete with an Undo toast, and a live weights meter (cream = must-have). The description field is deliberately quiet (inline edit).
+- **Buttons** have a loading state (spinner, `aria-busy`, disabled) and a disabled state that can explain why in a tooltip (`disabledReason`). Dialogs on phone are bottom sheets.
+- **Upload**: a large drop zone whose dashed border marches while dragging over it; each file row has its own progress bar, a status chip and Retry where it makes sense (rejected upload, scoring failed). Needs review uses `--info` on the chip and the bar.
+
+### 7.11 Phone pass (375px)
+The page's primary action is pinned to a bottom bar (solid in the workspace, `StickyBar`): Upload CVs on the ranked list, Submit to client on candidate detail, the decision buttons on the client's candidate page, Sign in on the login. All targets are at least 44px (48px for primary actions), bars add `--safe-bottom` (`viewport-fit=cover`) padding, and nothing scrolls horizontally.

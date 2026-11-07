@@ -111,15 +111,18 @@ function SignInCard({ form }: { form: UseFormReturn<Values> }) {
       <h2>Sign in to FairRank</h2>
       <form className="space-y-3.5" noValidate onSubmit={handleSubmit((values) => login.mutate(values, { onSuccess: (u) => navigate(homeFor(u.role), { replace: true }) }))}>
         <Field label="Email" htmlFor="email" error={errors.email?.message}>
-          <Input id="email" type="email" autoComplete="username" aria-invalid={!!errors.email} {...register('email')} />
+          <Input id="email" type="email" autoComplete="username" className="border-border-strong bg-glass-strong" aria-invalid={!!errors.email} {...register('email')} />
         </Field>
         <Field label="Password" htmlFor="password" error={errors.password?.message}>
-          <Input id="password" type="password" autoComplete="current-password" aria-invalid={!!errors.password} {...register('password')} />
+          <Input id="password" type="password" autoComplete="current-password" className="border-border-strong bg-glass-strong" aria-invalid={!!errors.password} {...register('password')} />
         </Field>
         {login.isError && <p role="alert" className="text-small text-bad">{login.error.message}</p>}
-        <Button type="submit" arrow size="lg" className="w-full" disabled={login.isPending}>
-          {login.isPending ? 'Signing in…' : 'Sign in'}
-        </Button>
+        {/* on a phone the primary action is pinned to the bottom edge so it is always in thumb reach */}
+        <div className="max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:bg-bg-base max-sm:px-(--gutter) max-sm:pb-[calc(0.75rem+var(--safe-bottom))] max-sm:pt-3">
+          <Button type="submit" arrow size="lg" className="w-full" loading={login.isPending}>
+            {login.isPending ? 'Signing in' : 'Sign in'}
+          </Button>
+        </div>
       </form>
       {DEMO_MODE && (
         <div className="flex flex-wrap items-center gap-2 border-t pt-3.5">
@@ -151,7 +154,7 @@ export function LoginPage() {
 
   return (
     <div className="min-h-dvh p-(--frame-margin)">
-      <div className="showcase-canvas flex min-h-[calc(100dvh-var(--frame-margin)*2)] flex-col gap-6 px-(--gutter) py-5 md:py-6">
+      <div className="showcase-canvas flex min-h-[calc(100dvh-var(--frame-margin)*2)] flex-col gap-6 px-(--gutter) py-5 max-sm:pb-28 md:py-6">
         <div aria-hidden className="showcase-bloom" />
         <header className="flex items-center justify-between gap-3">
           <p className="flex items-center gap-2 text-body font-medium">

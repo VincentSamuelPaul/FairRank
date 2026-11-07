@@ -9,10 +9,12 @@ import { AppShell, PageHeader } from '@/components/AppShell'
 import { EvidenceList, ScoreBadge, StageBadge } from '@/components/score'
 import { Async, Skeleton } from '@/components/states'
 import { Button } from '@/components/ui/button'
-import { FieldError, Hint, Select, Textarea } from '@/components/ui/field'
+import { FieldError, Hint, Textarea } from '@/components/ui/field'
+import { Listbox } from '@/components/ui/listbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
+import { StickyBar } from '@/components/ui/sticky-bar'
 import { Tooltip } from '@/components/ui/tooltip'
 import { useToast } from '@/components/ui/toast'
 import { post } from '@/lib/api'
@@ -78,7 +80,7 @@ function SubmitPanel({ c }: { c: CandidateDetail }) {
           <Button type="button" className="w-full" disabled><Send /> Submit to client</Button>
         </Tooltip>
       ) : (
-        <Button type="submit" arrow className="w-full" disabled={submit.isPending}>{submit.isPending ? 'Submitting…' : 'Submit to client'}</Button>
+        <Button type="submit" arrow className="w-full" loading={submit.isPending}>{submit.isPending ? 'Submitting' : 'Submit to client'}</Button>
       )}
       <Hint>The client sees this candidate with masked contact details. You decide; the score never submits anyone.</Hint>
     </form>
@@ -170,6 +172,8 @@ function Detail({ c }: { c: CandidateDetail }) {
     requestAnimationFrame(() => document.getElementById(`ev-${crit.criterion_id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }))
   }
   const sc = c.score
+  const { submit } = useCandidateActions(c.id, c.requisition.id)
+  const { toast } = useToast()
   return (
     <>
       <PageHeader
@@ -255,10 +259,7 @@ function Detail({ c }: { c: CandidateDetail }) {
             {canAct && c.allowed_moves.length > 0 && (
               <div className="space-y-1.5 border-t pt-3">
                 <Label htmlFor="move">Move in pipeline</Label>
-                <Select id="move" value="" disabled={move.isPending} onChange={(e) => e.target.value && move.mutate(e.target.value as Stage)}>
-                  <option value="">Currently {stageLabel(c.stage)}…</option>
-                  {c.allowed_moves.map((m) => <option key={m} value={m}>{stageLabel(m)}</option>)}
-                </Select>
+                <Listbox id="move" value="" disabled={move.isPending} placeholder={`Currently ${stageLabel(c.stage)}…`} onChange={(v) => v && move.mutate(v as Stage)} options={c.allowed_moves.map((m) => ({ value: m, label: stageLabel(m) }))} />
                 <FieldError message={move.isError ? move.error.message : undefined} />
               </div>
             )}
@@ -315,6 +316,21 @@ function Detail({ c }: { c: CandidateDetail }) {
           </div>
         </aside>
       </div>
+      {canAct && !c.submission && (
+        <StickyBar>
+          <Button
+            size="lg"
+            arrow
+            className="w-full"
+            loading={submit.isPending}
+            disabled={!c.can_submit}
+            disabledReason={c.viewed ? 'Only candidates at the Sourced or Screened stage can be submitted.' : 'Open the CV first. You can submit a candidate once you have read their CV.'}
+            onClick={() => submit.mutate('', { onSuccess: () => toast('Submitted to the client with masked contacts', 'ok'), onError: (e) => toast(e.message, 'bad') })}
+          >
+            {submit.isPending ? 'Submitting' : 'Submit to client'}
+          </Button>
+        </StickyBar>
+      )}
     </>
   )
 }

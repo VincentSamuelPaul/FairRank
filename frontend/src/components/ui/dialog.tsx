@@ -8,10 +8,12 @@ interface Props {
   title: string
   description?: string
   children: React.ReactNode
+  /** Wider dialog for forms with a long text field. */
+  wide?: boolean
 }
 
 /** A native <dialog>: focus trap, Esc to close and a backdrop for free. A bottom sheet on phones. */
-export function Dialog({ open, onClose, title, description, children }: Props) {
+export function Dialog({ open, onClose, title, description, children, wide = false }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   useEffect(() => {
@@ -23,7 +25,7 @@ export function Dialog({ open, onClose, title, description, children }: Props) {
   return (
     <dialog
       ref={ref}
-      className="modal w-full max-w-md rounded-card border bg-surface-2 p-0 text-text-1 shadow-float"
+      className={`modal surface-card w-full ${wide ? 'max-w-xl' : 'max-w-md'} rounded-card border p-0 text-text-1 shadow-float`}
       aria-labelledby={titleId}
       onClose={onClose}
       onClick={(e) => {

@@ -86,6 +86,7 @@
   --tap: 44px;
   --tap-lg: 48px;
   --header-h: 56px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px); /* home-indicator inset on phones */
 
   /* Radius */
   --r-frame: 24px;

@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CalendarClock, Check, X } from 'lucide-react'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
-import { FieldError, Select, Textarea } from '@/components/ui/field'
+import { FieldError, Textarea } from '@/components/ui/field'
+import { Listbox } from '@/components/ui/listbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
@@ -33,7 +34,7 @@ function RejectModal({ card, open, onClose }: { card: ClientCard; open: boolean;
         <FieldError message={decide.isError ? decide.error.message : undefined} />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline"  onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="destructive"  disabled={decide.isPending}>{decide.isPending ? 'Rejecting…' : 'Reject'}</Button>
+          <Button type="submit" variant="danger" loading={decide.isPending}>{decide.isPending ? 'Rejecting' : 'Reject'}</Button>
         </div>
       </form>
     </Modal>
@@ -43,7 +44,7 @@ function RejectModal({ card, open, onClose }: { card: ClientCard; open: boolean;
 function SlotModal({ card, open, onClose }: { card: ClientCard; open: boolean; onClose: () => void }) {
   const { propose } = usePortalActions(card.id)
   type In = z.input<typeof slotSchema>
-  const { register, handleSubmit, formState: { errors } } = useForm<In, unknown, z.output<typeof slotSchema>>({
+  const { register, control, handleSubmit, formState: { errors } } = useForm<In, unknown, z.output<typeof slotSchema>>({
     resolver: zodResolver(slotSchema),
     defaultValues: { starts_at: '', duration_minutes: 30, note: '' },
   })
@@ -63,11 +64,13 @@ function SlotModal({ card, open, onClose }: { card: ClientCard; open: boolean; o
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`dur-${card.id}`}>Length</Label>
-          <Select id={`dur-${card.id}`}  {...register('duration_minutes')}>
-            <option value={30}>30 minutes</option>
-            <option value={45}>45 minutes</option>
-            <option value={60}>1 hour</option>
-          </Select>
+          <Controller
+            control={control}
+            name="duration_minutes"
+            render={({ field }) => (
+              <Listbox id={`dur-${card.id}`} value={String(field.value)} onChange={field.onChange} options={[{ value: '30', label: '30 minutes' }, { value: '45', label: '45 minutes' }, { value: '60', label: '1 hour' }]} />
+            )}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`slot-note-${card.id}`}>Note (optional)</Label>
@@ -76,7 +79,7 @@ function SlotModal({ card, open, onClose }: { card: ClientCard; open: boolean; o
         <FieldError message={propose.isError ? propose.error.message : undefined} />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline"  onClick={onClose}>Cancel</Button>
-          <Button type="submit"  disabled={propose.isPending}>{propose.isPending ? 'Sending…' : 'Propose time'}</Button>
+          <Button type="submit" loading={propose.isPending}>{propose.isPending ? 'Sending' : 'Propose time'}</Button>
         </div>
       </form>
     </Modal>
@@ -95,7 +98,7 @@ export function DecisionActions({ card }: { card: ClientCard }) {
     <div className="space-y-2">
       <div className="grid grid-cols-2 gap-2">
         {card.stage === 'submitted' && (
-          <Button size="lg" className="col-span-2" onClick={() => decide.mutate({ decision: 'shortlist' })} disabled={decide.isPending}>
+          <Button size="lg" className="col-span-2" onClick={() => decide.mutate({ decision: 'shortlist' })} loading={decide.isPending}>
             <Check /> Shortlist
           </Button>
         )}

@@ -4,8 +4,9 @@ import { Link, useParams } from 'react-router-dom'
 import { Async, EmptyState } from '@/components/states'
 import { BandBar, type BandKey } from '@/components/ui/band-bar'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { StickyBar } from '@/components/ui/sticky-bar'
 import { CandidateRow } from '@/components/ui/candidate-row'
-import { Select } from '@/components/ui/field'
+import { Listbox } from '@/components/ui/listbox'
 import { Input } from '@/components/ui/input'
 import { RowListSkeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
@@ -109,10 +110,7 @@ export function RankedPage() {
               <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-2" aria-hidden />
               <Input aria-label="Search candidates" className="pl-10" placeholder="Search CVs" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            <Select aria-label="Filter by stage" className="w-36" value={stage} onChange={(e) => setStage(e.target.value)}>
-              <option value="">Any stage</option>
-              {STAGES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-            </Select>
+            <div className="w-40"><Listbox aria-label="Filter by stage" value={stage} onChange={setStage} options={[{ value: '', label: 'Any stage' }, ...STAGES.map((s) => ({ value: s.key, label: s.label }))]} /></div>
           </div>
         </div>
       </div>
@@ -146,6 +144,11 @@ export function RankedPage() {
           )
         }}
       </Async>
+      {user?.role === 'recruiter' && (
+        <StickyBar from="md">
+          <Link to="upload" aria-label="Upload CVs to this requisition" className={buttonVariants({ size: 'lg', className: 'w-full' })}>Upload CVs</Link>
+        </StickyBar>
+      )}
     </div>
   )
 }

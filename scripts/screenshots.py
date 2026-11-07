@@ -7,8 +7,10 @@ Run against the dev server (docker compose up). Uses the official Playwright ima
 Screens: login, login-anim, components, requisitions, new-requisition, ranked, scorecard, upload, candidate, portal, portal-candidate (default: login). Pass `all` for everything.
 Demo accounts are synthetic (see deployment.md); the password can be overridden with FAIRRANK_DEMO_PASSWORD.
 """
+import json
 import os
 import pathlib
+import re
 import sys
 
 from playwright.sync_api import Page, sync_playwright
@@ -64,8 +66,40 @@ def run(name: str, view: str, page: Page) -> None:
     elif name == "upload":
         sign_in(page, RECRUITER)
         open_ranked(page)
-        page.get_by_role("link", name="Upload CVs").click()
+        page.get_by_role("link", name="Upload CVs", exact=True).click()
         page.wait_for_selector("text=Drop PDF or DOCX CVs here")
+    elif name == "upload-files":
+        # The API is mocked here so the per-file states can be shown without writing candidates to the database.
+        sign_in(page, RECRUITER)
+        open_ranked(page)
+        page.get_by_role("link", name="Upload CVs", exact=True).click()
+        page.wait_for_selector("text=Drop PDF or DOCX CVs here")
+        names = ["ritika_bansal.pdf", "arjun_rawat.docx", "scan_kyc.pdf", "pooja_nair.pdf", "duplicate_cv.pdf"]
+        ids = [f"00000000-0000-0000-0000-00000000000{i}" for i in range(5)]
+        base = {"note": "", "full_name": "", "band": None, "total": None}
+        items = [
+            {**base, "candidate_id": ids[0], "name": names[0], "full_name": "Ritika Bansal", "cv_status": "parsed", "score_state": "scored", "band": "strong", "total": 100},
+            {**base, "candidate_id": ids[1], "name": names[1], "cv_status": "parsed", "score_state": "pending"},
+            {**base, "candidate_id": ids[2], "name": names[2], "cv_status": "needs_review", "score_state": "needs_manual_review"},
+            {**base, "candidate_id": ids[3], "name": names[3], "cv_status": "parsed", "score_state": "failed"},
+            {**base, "candidate_id": ids[4], "name": names[4], "cv_status": "duplicate", "note": "Possible duplicate of CND-91022", "score_state": "scored", "band": "weak", "total": 34},
+        ]
+
+        def mock(route):
+            if route.request.method == "POST":
+                body = {"accepted": [{"candidate_id": i, "name": n} for i, n in zip(ids, names)], "rejected": [{"name": "corrupt.pdf", "reason": "The file is not a real PDF"}]}
+            else:
+                body = {"items": items, "in_progress": True}
+            route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
+
+        page.route("**/api/requisitions/*/uploads/**", mock)
+        files = [{"name": n, "mimeType": "application/pdf", "buffer": b"%PDF-1.4 mock"} for n in names]
+        files += [{"name": "corrupt.pdf", "mimeType": "application/pdf", "buffer": b"%PDF-1.4 mock"}, {"name": "notes.txt", "mimeType": "text/plain", "buffer": b"x"}]
+        page.set_input_files("input[type=file]", files)
+        page.get_by_label("Consent is on record").check() if page.get_by_label("Consent is on record").count() else page.locator("input[type=checkbox]").check()
+        page.get_by_role("button", name=re.compile("^Upload \\d+ file")).click()
+        page.wait_for_selector("text=Processing")
+        page.wait_for_timeout(600)
     elif name == "ranked":
         sign_in(page, RECRUITER)
         open_ranked(page)
@@ -117,7 +151,7 @@ def login_animation(browser) -> None:
 
 def main(names: list[str]) -> None:
     if names == ["all"]:
-        names = ["login", "components", "requisitions", "new-requisition", "ranked", "scorecard", "upload", "candidate", "portal", "portal-candidate"]
+        names = ["login", "components", "requisitions", "new-requisition", "ranked", "scorecard", "upload", "upload-files", "candidate", "portal", "portal-candidate"]
     with sync_playwright() as p:
         browser = p.chromium.launch()
         if names == ["login-anim"]:

@@ -302,3 +302,23 @@ dialog.modal[open] {
   animation: page-enter var(--dur-base) var(--ease) both;
   animation-delay: var(--d, 0ms);
 }
+
+/* Drop zone: a dashed border that marches while a file is dragged over it. */
+.dash-border {
+  --c: var(--border-strong);
+  background:
+    linear-gradient(90deg, var(--c) 50%, transparent 50%) 0 0 / 14px 2px repeat-x,
+    linear-gradient(90deg, var(--c) 50%, transparent 50%) 0 100% / 14px 2px repeat-x,
+    linear-gradient(0deg, var(--c) 50%, transparent 50%) 0 0 / 2px 14px repeat-y,
+    linear-gradient(0deg, var(--c) 50%, transparent 50%) 100% 0 / 2px 14px repeat-y;
+  transition: --c var(--dur-fast);
+}
+.dash-border[data-drag='true'] {
+  --c: var(--signal);
+  animation: dash-march 700ms linear infinite;
+}
+@keyframes dash-march {
+  to {
+    background-position: 14px 0, -14px 100%, 0 14px, 100% -14px;
+  }
+}
