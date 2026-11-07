@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { cn } from '@/lib/utils'
 import type { CandidateRow as Row } from '@/lib/types'
 import { notice, years } from '@/lib/format'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -13,6 +14,13 @@ export interface RowActions {
   onSubmit: () => void
   onRetry: () => void
   busy?: boolean
+}
+
+/** Left edge of a row: solid in the band colour; dashed for Needs review (no score to colour by). */
+function stripe(row: Row): string {
+  if (row.score.state === 'needs_manual_review') return 'bg-[repeating-linear-gradient(180deg,var(--info)_0_6px,transparent_6px_10px)]'
+  const b = row.score.band
+  return b === 'strong' ? 'bg-ok' : b === 'possible' ? 'bg-warn' : b === 'weak' ? 'bg-bad' : 'bg-border-strong'
 }
 
 const NOT_OPENED = 'Open the CV first. You can submit a candidate once you have read their CV.'
@@ -72,10 +80,11 @@ export function CandidateRow({ row, rank, actions, uploadTo = 'upload' }: { row:
   const meta = [row.current_role, years(row.experience_years), `notice ${notice(row.notice_days)}`, row.location].filter(Boolean).join(' · ')
   const scored = row.score.state === 'scored'
   return (
-    <li className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 rounded-card border bg-surface-1 p-4 md:grid-cols-[7rem_1fr_11rem] md:gap-x-6 md:p-5">
+    <li className="surface-card relative grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 overflow-hidden rounded-card border p-4 pl-5 md:grid-cols-[7rem_1fr_11rem] md:gap-x-6 md:p-5 md:pl-6">
+      <span aria-hidden className={cn('absolute inset-y-0 left-0 w-(--stripe)', stripe(row))} />
       <div className="flex flex-col items-center gap-2 md:row-span-2">
         <span className="tnum text-small text-text-2" aria-label={rank ? `Rank ${rank}` : 'Not ranked'}>{rank ? `#${rank}` : '–'}</span>
-        <ScoreRing value={row.score.total} band={row.score.band} state={row.score.state} stacked />
+        <ScoreRing value={row.score.total} band={row.score.band} state={row.score.state} stacked glow />
       </div>
 
       <div className="min-w-0 space-y-1.5 md:col-start-2">

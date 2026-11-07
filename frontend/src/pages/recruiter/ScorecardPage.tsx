@@ -206,7 +206,7 @@ export function ScorecardPage() {
             <Criteria key={req.scorecard?.id ?? 'none'} req={req} editable={editable} />
           </section>
           <section>
-            <button type="button" className="text-small text-primary hover:underline" onClick={() => setShowJd((s) => !s)} aria-expanded={showJd}>
+            <button type="button" className="text-small text-signal hover:underline" onClick={() => setShowJd((s) => !s)} aria-expanded={showJd}>
               {showJd ? 'Hide' : 'Show'} the original job description
             </button>
             {showJd && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-muted/60 p-3 text-small">{req.jd_text}</p>}

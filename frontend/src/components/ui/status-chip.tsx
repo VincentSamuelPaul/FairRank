@@ -21,12 +21,19 @@ export function StatusChip({ children, tone = 'neutral', muted = false, classNam
   )
 }
 
-const STAGE_TONE: Partial<Record<Stage, ChipTone>> = { shortlisted: 'ok', interview: 'info', offered: 'ok', joined: 'ok' }
-
+/** Every pipeline stage has its own hue (dot + 12% tint). The label still names the stage, so colour is never the only signal. */
 export function StageChip({ stage, className }: { stage: Stage; className?: string }) {
   return (
-    <StatusChip tone={STAGE_TONE[stage] ?? 'neutral'} muted={stage === 'rejected'} className={className}>
+    <span
+      style={{ '--h': `var(--stage-${stage})` } as React.CSSProperties}
+      className={cn(
+        'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-pill border border-[color-mix(in_srgb,var(--h)_30%,transparent)] bg-[color-mix(in_srgb,var(--h)_12%,transparent)] px-2.5 text-micro uppercase text-text-1',
+        stage === 'rejected' && 'text-text-2 line-through decoration-1',
+        className,
+      )}
+    >
+      <span aria-hidden className="size-1.5 rounded-pill bg-(--h)" />
       {stageLabel(stage)}
-    </StatusChip>
+    </span>
   )
 }

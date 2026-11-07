@@ -19,9 +19,10 @@ Rule: decoration lives only on Showcase. Workspace and Portal earn their look fr
 --bg-base:        #0B1530   /* page base */
 --bg-bloom:       #1E3A66   /* gradient mid */
 --bg-highlight:   #2A4A7F   /* bloom core, showcase only */
---bg-ws:          #0E1B38   /* workspace background, solid */
---surface-1:      #14224A   /* workspace cards */
---surface-2:      #1A2B5A   /* raised / hover */
+--bg-ws:          #0A1429   /* page, darkest (round 2: see section 7) */
+--surface-panel:  #0F1C3E   /* panels */
+--surface-1:      #152550   /* cards */
+--surface-2:      #1E3068   /* raised / hover */
 --glass:          rgba(255,255,255,0.07)   /* showcase only */
 --glass-strong:   rgba(255,255,255,0.11)
 --border:         rgba(255,255,255,0.14)   /* 1px everywhere */
@@ -29,9 +30,9 @@ Rule: decoration lives only on Showcase. Workspace and Portal earn their look fr
 
 --text-1:         #F3EBDD   /* primary (cream) */
 --text-2:         rgba(243,235,221,0.72)
---text-3:         rgba(243,235,221,0.52)   /* minimum for any readable text */
+--text-3:         rgba(243,235,221,0.62)   /* helper text, placeholders (>= 4.5:1 on all four workspace steps) */
 
---accent:         #F3EBDD   /* the ONLY accent: primary buttons, active nav, focus ring */
+--accent:         #F3EBDD   /* primary action colour: primary buttons */
 --on-accent:      #0B1530
 
 --ok:     #8FD3A8   --warn:  #E8C77A   --bad:  #E88F8F   --info: #9DB8E8
@@ -99,3 +100,32 @@ Each has loading, empty and error variants where relevant, and a story or demo r
 - [ ] Numbers use tabular figures and align in columns
 - [ ] Nothing on screen without a purpose (remove decoration that carries no information)
 - [ ] Playwright screenshots at 375 and 1440 saved under `docs/screens/` and compared to the reference
+## 7. Round 2 additions (single source of truth: tokens in `frontend/src/styles/tokens.css`)
+
+Owner feedback: the workspace was one flat navy, forms were dark-on-dark, login did not excite. Additions below extend sections 1 to 6; where they conflict, this section wins.
+
+### 7.1 Depth ladder (workspace)
+`page (--bg-ws #0A1429) < panel (--surface-panel #0F1C3E) < card (--surface-1 #152550) < raised (--surface-2 #1E3068)`. Each step is visibly lighter; use the next step up for anything that sits on a surface (inputs inside a card use raised; hover is raised).
+- **Card treatment** (`surface-card` utility): 1px top edge `--highlight` (rgba(255,255,255,0.10)) and a vertical sheen, the top `--card-sheen` (4%) lighter than the bottom.
+- **Page wash** (`page-wash` utility): a very subtle radial wash behind page headers so the page is not one flat slab.
+- Contrast (checked by `scripts/contrast.py`): `--text-2` >= 6.25:1 and `--text-3` >= 5.05:1 on every step.
+
+### 7.2 One cool interactive hue
+`--signal #7FB2FF` for links, focus rings, the selected tab/nav underline and the input focus glow (>= 5.79:1 on every step). Cream (`--accent`) stays the primary action colour; do not use `--signal` for buttons.
+
+### 7.3 Pipeline stage hues (stage chips only)
+Each stage has a hue used as a 6px dot and a 12% tinted chip background with a 30% border; the label always names the stage (never colour alone), and Rejected is struck through.
+| Stage | Token | Hue |
+|---|---|---|
+| Sourced | `--stage-sourced #94A3B8` | slate |
+| Screened | `--stage-screened #7DD3FC` | sky |
+| Submitted | `--stage-submitted #B4A0FF` | violet |
+| Shortlisted | `--stage-shortlisted #5EEAD4` | teal |
+| Interview | `--stage-interview #FBBF24` | amber |
+| Offered | `--stage-offered #FB923C` | orange |
+| Joined | `--stage-joined #86EFAC` | green |
+| Rejected | `--stage-rejected #C48B9A` | muted rose |
+Stage hues never colour text or anything but the dot, tint and border. `--ok/--warn/--bad/--info` remain for score bands and flags.
+
+### 7.4 Score bands tint their context (ranked list)
+Each row has a `--stripe` (3px) left edge in the band colour (Strong ok, Possible warn, Weak bad); Needs review rows use a dashed `--info` stripe because there is no score to colour by. The ScoreRing has a soft glow behind it in the band colour (12%, `--glow-blur` 24px).

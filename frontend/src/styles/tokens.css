@@ -9,9 +9,11 @@
   --bg-base: #0b1530; /* page base */
   --bg-bloom: #1e3a66; /* gradient mid */
   --bg-highlight: #2a4a7f; /* bloom core, showcase only */
-  --bg-ws: #0e1b38; /* workspace background, solid */
-  --surface-1: #14224a; /* workspace cards */
-  --surface-2: #1a2b5a; /* raised / hover */
+  /* Workspace depth ladder (round 2): page < panel < card < raised. Each step is visibly lighter. */
+  --bg-ws: #0a1429; /* page, darkest */
+  --surface-panel: #0f1c3e; /* panels, sidebars, table wells */
+  --surface-1: #152550; /* cards */
+  --surface-2: #1e3068; /* raised: hover, popovers, dialogs' inputs, selected */
   --glass: rgba(255, 255, 255, 0.07); /* showcase only */
   --glass-strong: rgba(255, 255, 255, 0.11);
   --border: rgba(255, 255, 255, 0.14); /* 1px everywhere */
@@ -20,11 +22,30 @@
   /* Text (cream) */
   --text-1: #f3ebdd;
   --text-2: rgba(243, 235, 221, 0.72);
-  --text-3: rgba(243, 235, 221, 0.52);
+  --text-3: rgba(243, 235, 221, 0.62); /* helper text, placeholders: >= 4.5:1 on page, panel, card and raised */
 
   /* The ONLY accent: primary buttons, active nav, focus ring */
   --accent: #f3ebdd;
   --on-accent: #0b1530;
+
+  /* Edges and light (round 2) */
+  --highlight: rgba(255, 255, 255, 0.1); /* 1px top edge of cards */
+  --card-sheen: 4%; /* how much lighter the top of a card is than its bottom */
+  --stripe: 3px; /* band stripe on ranked rows */
+  --glow-blur: 24px; /* soft band glow behind a ScoreRing */
+
+  /* The cool interactive hue: links, focus rings, selected tab underline, input focus glow. Cream stays the primary action. */
+  --signal: #7fb2ff;
+
+  /* Pipeline stage hues: a dot plus a 12% tinted chip. The label always names the stage (never colour alone). */
+  --stage-sourced: #94a3b8; /* slate */
+  --stage-screened: #7dd3fc; /* sky */
+  --stage-submitted: #b4a0ff; /* violet */
+  --stage-shortlisted: #5eead4; /* teal */
+  --stage-interview: #fbbf24; /* amber */
+  --stage-offered: #fb923c; /* orange */
+  --stage-joined: #86efac; /* green */
+  --stage-rejected: #c48b9a; /* muted rose */
 
   /* Status only (score bands, chips). Never decoration. */
   --ok: #8fd3a8;
@@ -76,6 +97,7 @@
   --blur-glass: 18px;
 
   /* Motion */
+  --dur-instant: 120ms; /* input focus */
   --dur-fast: 150ms;
   --dur-base: 220ms;
   --ease: ease-out;

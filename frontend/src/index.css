@@ -15,6 +15,7 @@
   --color-bg-bloom: var(--bg-bloom);
   --color-bg-highlight: var(--bg-highlight);
   --color-ws: var(--bg-ws);
+  --color-surface-panel: var(--surface-panel);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-glass: var(--glass);
@@ -24,6 +25,16 @@
   --color-text-1: var(--text-1);
   --color-text-2: var(--text-2);
   --color-text-3: var(--text-3);
+  --color-signal: var(--signal);
+  --color-highlight: var(--highlight);
+  --color-stage-sourced: var(--stage-sourced);
+  --color-stage-screened: var(--stage-screened);
+  --color-stage-submitted: var(--stage-submitted);
+  --color-stage-shortlisted: var(--stage-shortlisted);
+  --color-stage-interview: var(--stage-interview);
+  --color-stage-offered: var(--stage-offered);
+  --color-stage-joined: var(--stage-joined);
+  --color-stage-rejected: var(--stage-rejected);
   --color-accent: var(--accent);
   --color-on-accent: var(--on-accent);
   --color-ok: var(--ok);
@@ -47,7 +58,7 @@
   --color-accent-foreground: var(--on-accent);
   --color-destructive: var(--bad);
   --color-input: var(--border-strong);
-  --color-ring: var(--accent);
+  --color-ring: var(--signal);
 
   /* type scale: text-display, text-h1, text-h2, text-body, text-small, text-micro */
   --text-display: var(--fs-display);
@@ -108,7 +119,7 @@
     min-height: 100vh;
   }
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--signal);
     outline-offset: 2px;
   }
   h1 {
@@ -191,4 +202,19 @@ dialog.modal[open] {
 @keyframes sheet-in {
   from { opacity: 0; transform: translateY(var(--shift)); }
   to { opacity: 1; transform: none; }
+}
+
+/* ---- Round 2: depth ---- */
+
+/* A card: top-edge highlight and a faint vertical sheen so layers read against the page. */
+@utility surface-card {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-1) var(--card-sheen), var(--surface-1)), var(--surface-1) 70%);
+  box-shadow: inset 0 1px 0 var(--highlight);
+}
+
+/* A very subtle wash behind page headers so the page is not one flat slab. */
+@utility page-wash {
+  background:
+    radial-gradient(60% 100% at 18% 0%, color-mix(in srgb, var(--bg-bloom) 38%, transparent), transparent 70%),
+    radial-gradient(40% 80% at 92% 0%, color-mix(in srgb, var(--bg-highlight) 16%, transparent), transparent 70%);
 }

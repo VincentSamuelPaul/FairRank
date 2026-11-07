@@ -202,7 +202,7 @@ function Detail({ c }: { c: CandidateDetail }) {
           <div className="mb-2 flex items-center justify-between gap-3">
             <h2 className="flex items-center gap-1.5"><FileText className="size-4" aria-hidden /> CV text</h2>
             {c.cv_file_url && (
-              <a href={c.cv_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-small text-primary hover:underline">
+              <a href={c.cv_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-small text-signal hover:underline">
                 Open original {c.cv_file_kind?.toUpperCase()} <ExternalLink className="size-3.5" aria-hidden />
               </a>
             )}

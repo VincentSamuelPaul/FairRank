@@ -42,7 +42,7 @@ def main() -> int:
     solid = lambda k: t[k][:3]
     # Surfaces: workspace solids, and the showcase canvas (glass laid over base / bloom / highlight).
     surfaces = {
-        "bg-ws": solid("bg-ws"), "surface-1": solid("surface-1"), "surface-2": solid("surface-2"),
+        "bg-ws (page)": solid("bg-ws"), "surface-panel": solid("surface-panel"), "surface-1 (card)": solid("surface-1"), "surface-2 (raised)": solid("surface-2"),
         "glass on bg-base": blend(t["glass"], solid("bg-base")),
         "glass-strong on bg-base": blend(t["glass-strong"], solid("bg-base")),
         "glass on bg-bloom": blend(t["glass"], solid("bg-bloom")),
@@ -59,10 +59,16 @@ def main() -> int:
             fails += not ok
             print(f"{tn:<9}{sn:<46}{r:>6.2f}  {'pass' if ok else 'FAIL'}")
     for name in ("ok", "warn", "bad", "info"):
-        for sn in ("bg-ws", "surface-1", "surface-2"):
+        for sn in ("bg-ws (page)", "surface-panel", "surface-1 (card)", "surface-2 (raised)"):
             r = ratio(solid(name), surfaces[sn])
             fails += r < 4.5
             print(f"{name:<9}{sn:<46}{r:>6.2f}  {'pass' if r >= 4.5 else 'FAIL'}")
+    for name in ("signal", "stage-sourced", "stage-screened", "stage-submitted", "stage-shortlisted", "stage-interview", "stage-offered", "stage-joined", "stage-rejected"):
+        for sn in ("bg-ws (page)", "surface-1 (card)", "surface-2 (raised)"):
+            r = ratio(solid(name), surfaces[sn])
+            need = 3.0 if name.startswith("stage-") else 4.5  # stage hues are a 6px dot (non-text, 3:1); the label carries the meaning
+            fails += r < need
+            print(f"{name:<18}{sn:<28}{r:>6.2f}  {'pass' if r >= need else 'FAIL'}")
     r = ratio(solid("on-accent"), solid("accent"))
     print(f"{'on-accent':<9}{'accent (primary button)':<46}{r:>6.2f}  {'pass' if r >= 4.5 else 'FAIL'}")
     return 1 if fails else 0

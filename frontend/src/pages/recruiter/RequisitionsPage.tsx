@@ -66,7 +66,7 @@ function NewRequisition({ open, onClose }: { open: boolean; onClose: () => void 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="jd_text">Job description</Label>
-            <button type="button" className="text-small text-primary hover:underline" onClick={() => setValue('jd_text', EXAMPLE_JD, { shouldValidate: true })}>
+            <button type="button" className="text-small text-signal hover:underline" onClick={() => setValue('jd_text', EXAMPLE_JD, { shouldValidate: true })}>
               Use the example JD
             </button>
           </div>

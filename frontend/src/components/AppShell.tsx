@@ -43,7 +43,7 @@ export function AppShell({
                     key={n.to}
                     to={n.to}
                     className={({ isActive }) =>
-                      cn('rounded-input px-3 py-2 text-small transition-colors', isActive ? 'bg-surface-2 font-medium text-text-1' : 'text-text-2 hover:text-text-1')
+                      cn('px-3 py-4 text-small transition-colors', isActive ? 'font-medium text-text-1 shadow-[inset_0_-2px_0_var(--signal)]' : 'text-text-2 hover:text-text-1')
                     }
                   >
                     {n.label}
