@@ -124,11 +124,11 @@ export function DecisionStatus({ card }: { card: ClientCard }) {
     return <p className="rounded-lg bg-muted/60 p-2.5 text-sm">Rejected{card.decision?.reason && <span className="block text-muted-foreground">Reason: {card.decision.reason}</span>}</p>
   if (slot && ['interview', 'offered', 'joined'].includes(card.stage))
     return (
-      <p className="rounded-lg bg-accent/60 p-2.5 text-sm">
+      <p className="rounded-lg bg-surface-2 p-2.5 text-sm">
         Interview proposed for <strong>{dateTime(slot.starts_at)}</strong> · {slot.duration_minutes} min · {slot.status}
         {['offered', 'joined'].includes(card.stage) && <span className="block text-muted-foreground">Now at the {card.stage} stage.</span>}
       </p>
     )
-  if (card.stage === 'shortlisted') return <p className="rounded-lg bg-accent/60 p-2.5 text-sm">You shortlisted this candidate.</p>
+  if (card.stage === 'shortlisted') return <p className="rounded-lg bg-surface-2 p-2.5 text-sm">You shortlisted this candidate.</p>
   return null
 }

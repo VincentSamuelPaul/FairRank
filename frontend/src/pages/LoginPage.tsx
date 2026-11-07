@@ -27,7 +27,16 @@ export function LoginPage() {
   if (user) return <Navigate to={homeFor(user.role)} replace />
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="mx-auto flex min-h-screen max-w-6xl flex-col items-start justify-center gap-10 p-6 md:flex-row md:items-center md:justify-between md:gap-16">
+      <div className="max-w-xl space-y-5">
+        <p className="text-sm tracking-wide text-muted-foreground">FairRank</p>
+        <h1 className="text-5xl font-light leading-[1.05] tracking-[-0.03em] sm:text-7xl">
+          Hiring that shows its work.
+        </h1>
+        <p className="max-w-md text-muted-foreground">
+          Every score quotes the CV. Low scorers are labelled, never hidden. Nobody is auto-rejected.
+        </p>
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-xl">Sign in to FairRank</CardTitle>

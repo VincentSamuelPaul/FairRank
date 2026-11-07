@@ -114,7 +114,7 @@ export function RequisitionsPage() {
           <ul className="grid gap-3 sm:grid-cols-2">
             {reqs.map((r) => (
               <li key={r.id}>
-                <Link to={`/requisitions/${r.id}`} className="block h-full rounded-xl border p-4 transition-colors hover:border-primary/50 hover:bg-accent/30">
+                <Link to={`/requisitions/${r.id}`} className="block h-full rounded-xl border p-4 transition-colors hover:border-primary/50 hover:bg-surface-2">
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="font-medium">{r.title}</h2>
                     <span className="shrink-0 text-xs text-muted-foreground">v{r.scorecard_version ?? '–'}</span>

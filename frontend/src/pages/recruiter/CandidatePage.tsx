@@ -129,7 +129,7 @@ function SubmissionPanel({ c, canAct }: { c: CandidateDetail; canAct: boolean })
         </p>
       ))}
       {sub.slots.map((s) => (
-        <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-accent/50 p-2.5">
+        <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-2 p-2.5">
           <span>
             Interview {dateTime(s.starts_at)} · {s.duration_minutes} min · <em className="not-italic text-muted-foreground">{s.status}</em>
           </span>

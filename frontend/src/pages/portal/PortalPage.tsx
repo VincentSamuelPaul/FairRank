@@ -20,7 +20,7 @@ function topEvidence(card: ClientCard) {
 function Card({ card }: { card: ClientCard }) {
   const ev = topEvidence(card)
   return (
-    <li className="space-y-3 rounded-2xl border bg-card p-4 shadow-xs">
+    <li className="space-y-3 rounded-card border bg-surface-1 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link to={`/portal/candidates/${card.id}`} className="block truncate text-lg font-semibold leading-tight hover:underline">{card.full_name}</Link>

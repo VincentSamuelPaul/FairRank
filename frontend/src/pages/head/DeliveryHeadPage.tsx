@@ -28,7 +28,7 @@ export function PipelineOverviewPage() {
       <Async query={query} isEmpty={(d) => d.length === 0} empty={<EmptyState title="No requisitions yet" />}>
         {(rows) => (
           <div className="overflow-x-auto rounded-xl border">
-            <table className="w-full min-w-[44rem] text-sm">
+            <table className="w-full min-w-176 text-sm">
               <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
                 <tr>
                   <th scope="col" className="px-3 py-2 font-medium">Requisition</th>
@@ -37,7 +37,7 @@ export function PipelineOverviewPage() {
               </thead>
               <tbody className="divide-y">
                 {rows.map((r) => (
-                  <tr key={r.id} className="hover:bg-accent/30">
+                  <tr key={r.id} className="hover:bg-surface-2">
                     <th scope="row" className="px-3 py-3 text-left font-normal">
                       <Link to={`/requisitions/${r.id}/pipeline`} className="font-medium hover:underline">{r.title}</Link>
                       <span className="block text-xs text-muted-foreground">{r.client} · {r.total} CVs</span>

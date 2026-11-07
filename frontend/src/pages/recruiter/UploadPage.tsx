@@ -97,7 +97,7 @@ export function UploadPage() {
         onDragOver={(e) => { e.preventDefault(); setDrag(true) }}
         onDragLeave={() => setDrag(false)}
         onDrop={(e) => { e.preventDefault(); setDrag(false); add(e.dataTransfer.files) }}
-        className={cn('rounded-xl border-2 border-dashed p-8 text-center transition-colors', drag ? 'border-primary bg-accent/50' : 'border-border')}
+        className={cn('rounded-xl border-2 border-dashed p-8 text-center transition-colors', drag ? 'border-primary bg-surface-2' : 'border-border')}
       >
         <FileUp className="mx-auto size-7 text-muted-foreground" aria-hidden />
         <p className="mt-2 font-medium">Drop PDF or DOCX CVs here</p>
@@ -139,7 +139,7 @@ export function UploadPage() {
               <li key={i} className="truncate">{f.name}</li>
             ))}
           </ul>
-          <label className="flex items-start gap-2.5 rounded-lg bg-accent/50 p-3 text-sm">
+          <label className="flex items-start gap-2.5 rounded-lg bg-surface-2 p-3 text-sm">
             <input type="checkbox" className="mt-0.5 size-4 accent-[var(--primary)]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             <span>
               <span className="flex items-center gap-1.5 font-medium"><ShieldCheck className="size-4 text-primary" aria-hidden /> Consent is on record</span>

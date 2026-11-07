@@ -51,7 +51,7 @@ export function StageBadge({ stage }: { stage: Stage }) {
     <span
       className={cn(
         'inline-flex h-5 items-center rounded-full px-2 text-xs font-medium ring-1 ring-foreground/10',
-        stage === 'rejected' ? 'bg-muted text-muted-foreground line-through decoration-1' : 'bg-background text-foreground',
+        stage === 'rejected' ? 'bg-muted text-muted-foreground line-through decoration-1' : 'bg-surface-2 text-text-1',
       )}
     >
       {stageLabel(stage)}

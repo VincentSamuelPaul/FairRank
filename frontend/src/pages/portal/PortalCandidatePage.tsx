@@ -55,7 +55,7 @@ export function PortalCandidatePage() {
               <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap break-words rounded-xl border bg-card p-4 font-sans text-sm leading-relaxed">{c.cv_text}</pre>
               {c.contacts.masked && <p className="text-xs text-muted-foreground">Emails, phone numbers and profile links in the CV are hidden until the interview stage.</p>}
             </section>
-            <div className="sticky bottom-0 -mx-4 border-t bg-background/95 p-4 backdrop-blur">
+            <div className="sticky bottom-0 -mx-4 border-t bg-ws p-4">
               <DecisionActions card={c} compact />
             </div>
             <HowWeScreen open={how} onClose={() => setHow(false)} />

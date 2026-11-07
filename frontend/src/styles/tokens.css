@@ -1,0 +1,90 @@
+/*
+ * FairRank design tokens. Single source of truth (docs/DESIGN.md section 2).
+ * Hex colours live ONLY in this file. Tailwind mirrors these in index.css (@theme).
+ */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg-base: #0b1530; /* page base */
+  --bg-bloom: #1e3a66; /* gradient mid */
+  --bg-highlight: #2a4a7f; /* bloom core, showcase only */
+  --bg-ws: #0e1b38; /* workspace background, solid */
+  --surface-1: #14224a; /* workspace cards */
+  --surface-2: #1a2b5a; /* raised / hover */
+  --glass: rgba(255, 255, 255, 0.07); /* showcase only */
+  --glass-strong: rgba(255, 255, 255, 0.11);
+  --border: rgba(255, 255, 255, 0.14); /* 1px everywhere */
+  --border-strong: rgba(255, 255, 255, 0.24);
+
+  /* Text (cream) */
+  --text-1: #f3ebdd;
+  --text-2: rgba(243, 235, 221, 0.72);
+  --text-3: rgba(243, 235, 221, 0.52);
+
+  /* The ONLY accent: primary buttons, active nav, focus ring */
+  --accent: #f3ebdd;
+  --on-accent: #0b1530;
+
+  /* Status only (score bands, chips). Never decoration. */
+  --ok: #8fd3a8;
+  --warn: #e8c77a;
+  --bad: #e88f8f;
+  --info: #9db8e8;
+
+  /* Type: Inter Tight (self-hosted via Fontsource) */
+  --font-ui: 'Inter Tight Variable', ui-sans-serif, system-ui, sans-serif;
+  --fs-display: clamp(44px, 7vw, 112px);
+  --fs-h1: 32px;
+  --fs-h2: 22px;
+  --fs-body: 15px;
+  --fs-small: 13px;
+  --fs-micro: 11.5px;
+  --lh-display: 0.95;
+  --lh-h1: 1.1;
+  --lh-h2: 1.2;
+  --lh-body: 1.55;
+  --lh-small: 1.45;
+  --lh-micro: 1.3;
+  --fw-display: 300;
+  --fw-h1: 400;
+  --fw-h2: 500;
+  --fw-body: 400;
+  --fw-micro: 500;
+  --tr-display: -0.03em;
+  --tr-h1: -0.02em;
+  --tr-h2: -0.01em;
+  --tr-micro: 0.04em;
+
+  /* Space: 4px base (4 8 12 16 24 32 48 72 120) is Tailwind's default scale. */
+  --gutter: 16px;
+  --frame-margin: 12px;
+  --tap: 44px;
+  --tap-lg: 48px;
+  --header-h: 56px;
+
+  /* Radius */
+  --r-frame: 24px;
+  --r-card: 16px;
+  --r-input: 12px;
+  --r-pill: 999px;
+  --r-xs: 6px;
+  --r-sm: 8px;
+
+  /* Depth: border + blur (showcase) or border + surface step (workspace). Shadow only on floating panels. */
+  --shadow-float: 0 8px 30px rgba(0, 0, 0, 0.25);
+  --blur-glass: 18px;
+
+  /* Motion */
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --ease: ease-out;
+  --shift: 6px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 32px;
+    --frame-margin: 16px;
+  }
+}

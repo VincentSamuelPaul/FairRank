@@ -30,7 +30,7 @@ export function AppShell({
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-background focus:p-2">
         Skip to content
       </a>
-      <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
+      <header className="sticky top-0 z-20 h-(--header-h) border-b bg-ws">
         <div className={cn('mx-auto flex items-center justify-between gap-3 px-4 py-2.5', narrow ? 'max-w-2xl' : 'max-w-6xl')}>
           <div className="flex items-center gap-5">
             <Link to="/" className="flex items-center gap-1.5 font-semibold tracking-tight">
@@ -43,7 +43,7 @@ export function AppShell({
                     key={n.to}
                     to={n.to}
                     className={({ isActive }) =>
-                      cn('rounded-md px-2 py-1 text-sm', isActive ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground hover:text-foreground')
+                      cn('rounded-input px-3 py-2 text-small transition-colors', isActive ? 'bg-surface-2 font-medium text-text-1' : 'text-text-2 hover:text-text-1')
                     }
                   >
                     {n.label}
@@ -93,7 +93,7 @@ export function PageHeader({
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1>{title}</h1>
           {subtitle && <div className="text-sm text-muted-foreground">{subtitle}</div>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

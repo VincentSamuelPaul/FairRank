@@ -167,7 +167,7 @@ function Criteria({ req, editable }: { req: Requisition; editable: boolean }) {
       )}
       {save.isError && <FieldError message={save.error.message} />}
       {save.isSuccess && (
-        <p role="status" className="rounded-lg bg-accent/60 p-3 text-sm">
+        <p role="status" className="rounded-lg bg-surface-2 p-3 text-sm">
           Saved as v{save.data.version}. {save.data.rescoring > 0 ? `Re-scoring ${save.data.rescoring} CVs now.` : 'No CVs to re-score yet.'}
         </p>
       )}
@@ -189,7 +189,7 @@ export function ScorecardPage() {
         <div className="space-y-8">
           {state?.warning && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">{state.warning}</p>}
           {state?.fresh && !state.warning && (
-            <p className="flex items-start gap-2 rounded-lg bg-accent/60 p-3 text-sm">
+            <p className="flex items-start gap-2 rounded-lg bg-surface-2 p-3 text-sm">
               <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
               Drafted from the JD. Check the criteria, weights and must-haves before you upload CVs: the AI can miss or over-read things.
             </p>

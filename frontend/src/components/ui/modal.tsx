@@ -22,7 +22,7 @@ export function Modal({ open, onClose, title, description, children }: Props) {
   return (
     <dialog
       ref={ref}
-      className="modal w-full max-w-md rounded-2xl bg-background p-0 text-foreground shadow-xl ring-1 ring-foreground/10"
+      className="modal w-full max-w-md rounded-card border bg-surface-2 p-0 text-text-1 shadow-float"
       aria-labelledby="modal-title"
       onClose={onClose}
       onClick={(e) => {
