@@ -56,7 +56,7 @@ function Button({ className, variant = 'default', size = 'default', arrow = fals
     <ButtonPrimitive data-slot="button" aria-busy={loading || undefined} disabled={off} className={cn(buttonVariants({ variant, size, className }))} {...props}>
       {loading && <Spinner />}
       {children}
-      {arrow && !loading && <ArrowRight className="transition-transform duration-(--dur-fast) ease-ui group-hover/button:translate-x-0.5" aria-hidden />}
+      {arrow && !loading && <ArrowRight className="transition-transform duration-(--dur-fast) ease-ui group-hover/button:translate-x-[3px]" aria-hidden />}
     </ButtonPrimitive>
   )
   return off && disabledReason && !loading ? <Tooltip content={disabledReason} className={typeof className === 'string' && className.includes('w-full') ? 'w-full' : undefined}>{btn}</Tooltip> : btn

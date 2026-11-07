@@ -31,7 +31,7 @@ def settle(page: Page) -> None:
 def sign_in(page: Page, email: str) -> None:
     page.goto(f"{BASE}/login")
     page.get_by_label("Email").fill(email)
-    page.get_by_label("Password").fill(PASSWORD)
+    page.get_by_label("Password", exact=True).fill(PASSWORD)
     page.get_by_role("button", name="Sign in", exact=True).click()
     page.wait_for_url(lambda u: "/login" not in u)
     settle(page)
@@ -241,10 +241,10 @@ def main() -> int:
             pg.keyboard.press("Tab")
             order.append(pg.evaluate("(() => { const e = document.activeElement; return (e.getAttribute('aria-label') || e.innerText || e.id || e.tagName).trim().slice(0, 22); })()"))
             pg.wait_for_timeout(300)
-            rings.append(pg.evaluate("(() => { const e = document.activeElement; if (e === document.body) return true; const s = getComputedStyle(e); return (s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0) || s.boxShadow !== 'none'; })()"))
+            rings.append(pg.evaluate("(() => { const e = document.activeElement; if (e === document.body) return true; const w = e.closest('.login-field'); if (w && getComputedStyle(w).boxShadow !== 'none') return true; const s = getComputedStyle(e); return (s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0) || s.boxShadow !== 'none'; })()"))
         ring = all(rings)
-        expected = ["How we screen", "Privacy", "email", "password", "Sign in"]
-        check(order[:5] == expected, "keyboard: tab order follows the visual order (nav, email, password, sign in)", " > ".join(order[:5]))
+        expected = ["How we screen", "Privacy", "email", "password", "Show password", "Sign in"]
+        check(order[:6] == expected, "keyboard: tab order follows the visual order (nav, email, password, reveal, sign in)", " > ".join(order[:6]))
         check(bool(ring), "keyboard: every focused control has a visible focus ring", f"{sum(rings)}/{len(rings)}; no ring: {[o for o, r in zip(order, rings) if not r]}")
         pg.get_by_role("button", name="How we screen").click()
         check(pg.get_by_role("dialog").is_visible(), "dead-button check: How we screen opens a dialog")
@@ -255,8 +255,26 @@ def main() -> int:
         check(pg.get_by_role("dialog").is_visible(), "dead-button check: Privacy opens a dialog")
         pg.keyboard.press("Escape")
         pg.wait_for_timeout(250)
-        pg.get_by_role("button", name="Recruiter", exact=True).click()
-        filled = pg.get_by_label("Email").input_value() == RECRUITER and pg.get_by_label("Password").input_value() != ""
+        # round 4 form behaviour: reveal toggle, error banner (icon, role=alert, both fields flagged, clears on typing), demo rows
+        pw = pg.get_by_label("Password", exact=True)
+        pg.get_by_role("button", name="Show password").click()
+        check(pw.get_attribute("type") == "text" and pg.get_by_role("button", name="Hide password").get_attribute("aria-pressed") == "true", "password reveal toggle works and exposes its state")
+        pg.get_by_role("button", name="Hide password").click()
+        pg.get_by_label("Email").fill(RECRUITER)
+        pw.fill("definitely-wrong")
+        pg.get_by_role("button", name="Sign in", exact=True).click()
+        pg.wait_for_selector("[role=alert]")
+        alert = pg.locator("form [role=alert]").first
+        flagged = pg.evaluate("[...document.querySelectorAll('.login-field')].every(f => f.dataset.invalid === 'true')")
+        first = pg.evaluate("(() => { const a = document.querySelector('form [role=alert]'); const f = document.querySelector('form .login-field'); return a && f && !!(a.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING); })()")
+        check(alert.locator("svg").count() == 1 and "Invalid" in alert.inner_text() and flagged and first, "sign-in error: banner above the fields with an icon, both fields flagged", alert.inner_text())
+        pw.type("x")
+        pg.wait_for_timeout(200)
+        check(pg.locator("form [role=alert]").count() == 0, "sign-in error clears when typing")
+        pg.get_by_role("button", name=re.compile("^Recruiter")).click()
+        check(pg.evaluate("document.activeElement.textContent.trim().startsWith('Sign in')") and "/login" in pg.url, "a demo row fills the form and focuses Sign in without submitting")
+        pg.get_by_role("button", name=re.compile("^Recruiter")).click()
+        filled = pg.get_by_label("Email").input_value() == RECRUITER and pg.get_by_label("Password", exact=True).input_value() != ""
         check(filled, "dead-button check: the Recruiter quick-fill chip fills the sign-in form")
         pg.get_by_role("button", name="Sign in", exact=True).click()
         pg.wait_for_url(lambda u: "/login" not in u)

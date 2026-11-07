@@ -185,3 +185,15 @@ Final values live in `tokens.css`; everything below was checked with `scripts/co
 - Inputs on the glass login card use `bg-bg-base/50` (a darker well), not a light glass fill: crisp edge, higher contrast.
 - Criterion score bars are `text-1` at 70%, not full cream, so a row of 100s does not become a block of white.
 - The score ring on the candidate header is `md` on phones and `lg` from `md` up.
+
+## 9. Round 4
+### 9.1 Login card (replaces the single glass card of 8.1)
+- Material: tinted glass `--login-glass` (rgba(140,175,235,.07)), `blur(24px) saturate(140%)`, a 1px **gradient** border (masked pseudo-element: `--login-edge-hi` .28 top-left to `--login-edge-lo` .06 bottom-right), a 1px inner top highlight, `--login-shadow`, radius 24, padding 32 (24 on short desktop viewports and phones). A faint cream glow (`--login-glow`, 300px) sits behind it. Phones drop the blur (a backdrop-filter box becomes the containing block of the pinned Sign in bar) and use a darker tint instead.
+- Inside `.login-card`, text-2 is 80% and text-3 68% (text over the bright bloom needs more light). Tokens: `--field-bg` .05, `--field-border` .14, hover `.22`, `--autofill-bg` (opaque stand-in so autofill never paints yellow/white).
+- Copy: "Welcome back" / "Sign in to keep screening."
+- Fields: 52px, radius 14, 18px leading icon (mail, lock) in text-3 that turns text-1 on focus; the wrapper draws border + 4px signal@22% ring (120ms); hover border .22. Password has a reveal toggle (`aria-label` Show/Hide password, `aria-pressed`) and an inline Caps Lock warning. NOTE: because of that toggle, scripts must use `get_by_label("Password", exact=True)`.
+- Error: compact banner ABOVE the first field (alert icon, `--bad` text on 10% tint, `role="alert"`, one 300ms shake), both fields get a `--bad` border, message unchanged ("Invalid email or password."), cleared on typing.
+- Submit: cream pill 52px; the arrow nudges 3px on hover (all buttons); loading shows the spinner and "Signing in"; success shows a tick and "Signed in" for ~650ms before the redirect (the redirect is held while the tick shows).
+- Demo roles (only when `VITE_DEMO_MODE=true`): under a hairline and "Try a demo role", three selectable rows (role in text-1, one-line blurb in text-3), 56px on phones, 48px on desktop. Selecting fills the form and focuses Sign in; it never submits.
+- Footer line under the card (lock icon, text-3 micro): "Every CV view is logged. Candidate data is used for hiring only." On desktop it is absolutely positioned so the CARD (not card + footer) is vertically centred on the headline block.
+- Entrance: card fades up 8px over 320ms, fields stagger 40ms (`.fade-up`); disabled by reduced motion.

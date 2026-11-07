@@ -33,7 +33,7 @@ def settle(page: Page) -> None:
 def sign_in(page: Page, email: str) -> None:
     page.goto(f"{BASE}/login")
     page.get_by_label("Email").fill(email)
-    page.get_by_label("Password").fill(PASSWORD)
+    page.get_by_label("Password", exact=True).fill(PASSWORD)
     page.get_by_role("button", name="Sign in", exact=True).click()
     page.wait_for_url(lambda u: "/login" not in u)
     settle(page)
@@ -48,6 +48,25 @@ def open_ranked(page: Page) -> None:
 def run(name: str, view: str, page: Page) -> None:
     if name == "login":
         page.goto(f"{BASE}/login")
+    elif name == "login-error":
+        page.goto(f"{BASE}/login")
+        page.get_by_label("Email").fill(RECRUITER)
+        page.get_by_label("Password", exact=True).fill("not-the-password")
+        page.get_by_role("button", name="Sign in", exact=True).click()
+        page.wait_for_selector("[role=alert]")
+        page.wait_for_timeout(500)  # let the one-off shake finish
+    elif name == "login-filled":
+        page.goto(f"{BASE}/login")
+        page.get_by_role("button", name=re.compile("^Recruiter")).click()
+        page.wait_for_timeout(300)
+    elif name == "login-loading":
+        # the login request is held open so the in-flight state can be captured; nothing reaches the backend
+        page.route("**/api/auth/login/", lambda route: None)
+        page.goto(f"{BASE}/login")
+        page.get_by_role("button", name=re.compile("^Recruiter")).click()
+        page.get_by_role("button", name="Sign in", exact=True).click()
+        page.wait_for_selector("text=Signing in")
+        page.wait_for_timeout(300)
     elif name == "components":
         page.goto(f"{BASE}/dev/components")
     elif name == "requisitions":
@@ -108,6 +127,14 @@ def run(name: str, view: str, page: Page) -> None:
         open_ranked(page)
         page.locator("ul > li a[href^='/candidates/']").first.click()
         page.wait_for_selector("pre", state="attached")
+    elif name == "candidate-scrolled":
+        sign_in(page, RECRUITER)
+        open_ranked(page)
+        page.locator("ul > li a[href^='/candidates/']").first.click()
+        page.wait_for_selector("pre", state="attached")
+        settle(page)
+        page.mouse.wheel(0, 600)
+        page.wait_for_timeout(700)
     elif name == "portal":
         sign_in(page, CLIENT)
     elif name == "portal-candidate":
@@ -116,8 +143,10 @@ def run(name: str, view: str, page: Page) -> None:
         page.wait_for_selector("pre", state="attached")
     else:
         raise SystemExit(f"unknown screen: {name}")
-    settle(page)
-    full = (name not in ("login", "new-requisition")) or (view == "phone" and name != "new-requisition")
+    if name != "login-loading":
+        settle(page)
+    fold_only = name.startswith("login") or name == "new-requisition" or name.endswith("-scrolled")
+    full = not fold_only
     dims = page.evaluate("[document.documentElement.scrollWidth, innerWidth, document.documentElement.scrollHeight, innerHeight]")
     print(f"{name}-{view}: scrollW={dims[0]} viewW={dims[1]} scrollH={dims[2]} viewH={dims[3]}" + ("  HORIZONTAL SCROLL" if dims[0] > dims[1] else ""))
     designed = VIEWS[view]["width"]
@@ -125,7 +154,7 @@ def run(name: str, view: str, page: Page) -> None:
     if wide:
         print(f"  WIDER THAN {designed}px:", wide)
     OUT.mkdir(parents=True, exist_ok=True)
-    if name == "login" and view == "phone" and not CLIP:
+    if False:
         page.screenshot(path=str(OUT / "login-phone-fold.png"))  # what a phone actually shows first (the pinned Sign in bar is fixed)
         print("wrote", OUT / "login-phone-fold.png")
     if CLIP:

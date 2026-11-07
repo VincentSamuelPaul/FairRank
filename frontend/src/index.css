@@ -360,3 +360,113 @@ dialog.modal[open] {
     background-position: 14px 0, -14px 100%, 0 14px, 100% -14px;
   }
 }
+
+/* ---- Round 4: login card (showcase only) ---- */
+.login-wrap {
+  position: relative;
+  isolation: isolate;
+}
+/* faint warm glow behind the card so it separates from the blue canvas */
+.login-wrap::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 300px;
+  height: 300px;
+  right: -90px;
+  bottom: -90px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, var(--login-glow), transparent 70%);
+}
+.login-card {
+  position: relative;
+  border-radius: 24px;
+  padding: 32px;
+  background: var(--login-glass);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--login-shadow);
+  /* text on glass over the bright bloom needs a little more light */
+  --text-2: rgba(243, 235, 221, 0.8);
+  --text-3: rgba(243, 235, 221, 0.68);
+}
+@media (min-width: 1024px) and (max-height: 960px) {
+  .login-card {
+    padding-block: 24px;
+  }
+}
+/* 1px gradient border: a masked pseudo-element (top-left bright, bottom-right faint) */
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(135deg, var(--login-edge-hi), var(--login-edge-lo));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+/* a pinned phone action bar inside a backdrop-filter box would be positioned against it, so no blur on phones */
+@media (max-width: 639px) {
+  .login-card {
+    padding: 24px;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: color-mix(in srgb, var(--bg-base) 38%, var(--login-glass));
+  }
+}
+.login-field {
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  transition: border-color var(--dur-instant), box-shadow var(--dur-instant);
+}
+.login-field:hover {
+  border-color: var(--field-border-hover);
+}
+.login-field:focus-within {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--signal) 22%, transparent);
+}
+.login-field[data-invalid='true'] {
+  border-color: var(--bad);
+}
+.login-field input {
+  background: transparent;
+  color: var(--text-1);
+}
+/* browser autofill must not turn the field yellow or white */
+.login-field input:-webkit-autofill,
+.login-field input:-webkit-autofill:hover,
+.login-field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-1);
+  caret-color: var(--text-1);
+  -webkit-box-shadow: 0 0 0 1000px var(--autofill-bg) inset;
+  transition: background-color 9999s ease-out;
+}
+.fade-up {
+  animation: fade-up 320ms var(--ease) backwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+}
+.shake {
+  animation: shake 300ms var(--ease) 1;
+}
+@keyframes shake {
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+.tick-pop {
+  animation: tick-pop 260ms var(--ease) backwards;
+}
+@keyframes tick-pop {
+  from { transform: scale(0.5); opacity: 0; }
+}
