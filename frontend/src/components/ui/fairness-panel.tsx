@@ -13,12 +13,12 @@ export const RULES = [
 export function FairnessPanel({ variant = 'list', className }: { variant?: 'list' | 'strip'; className?: string }) {
   if (variant === 'strip')
     return (
-      <ul aria-label="How we screen" className={cn('grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-5', className)}>
+      <ul aria-label="How we screen" className={cn('grid grid-cols-2 gap-x-6 gap-y-[clamp(8px,2vh,20px)] min-[700px]:grid-cols-5 [@media(max-height:759px)]:flex [@media(max-height:759px)]:flex-wrap [@media(max-height:759px)]:justify-between [@media(max-height:759px)]:gap-y-2 [@media(max-height:759px)]:[&_br]:hidden [@media(max-height:759px)]:[&_li]:items-center [@media(max-height:759px)]:[&_svg]:size-4', className)}>
         {RULES.map(({ icon: Icon, lines, title }) => (
           <li key={title} aria-label={title} className="flex items-start gap-3">
             <Icon className="mt-0.5 size-5 shrink-0 text-text-1" aria-hidden />
             <span className="text-small leading-snug text-text-1">
-              {lines[0]}
+              {lines[0]}{' '}
               <br />
               {lines[1]}
             </span>

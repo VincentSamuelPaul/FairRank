@@ -68,7 +68,9 @@
   /* Type: Inter Tight (self-hosted via Fontsource) */
   --font-ui: 'Inter Tight Variable', ui-sans-serif, system-ui, sans-serif;
   --fs-display: clamp(44px, 7vw, 112px);
-  --fs-hero: clamp(56px, 9vw, 150px); /* login headline (round 2) */
+  --fs-hero: clamp(40px, min(9vw, 14vh), 150px); /* login headline: driven by width AND height (round 5) */
+  --g: clamp(10px, 1.8vh, 16px); /* vertical gap unit on the login (round 5) */
+  --g-page: clamp(12px, 2.4vh, 24px); /* page-level vertical rhythm on the login */
   --fs-h1: 32px;
   --fs-h2: 22px;
   --fs-body: 15px;
@@ -118,6 +120,12 @@
   --dur-base: 220ms;
   --ease: ease-out;
   --shift: 6px;
+}
+
+@media (max-width: 899px) {
+  :root {
+    --fs-hero: clamp(40px, 8vw, 60px); /* stacked layout: smaller headline so the card comes up the page */
+  }
 }
 
 @media (min-width: 768px) {

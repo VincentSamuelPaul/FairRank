@@ -120,7 +120,7 @@ function SignInCard({ form, hold }: { form: UseFormReturn<Values>; hold: (on: bo
           <h2>Welcome back</h2>
           <p className="text-small text-text-2">Sign in to keep screening.</p>
         </div>
-        <form className="mt-5 space-y-3.5 sm:mt-6 sm:space-y-4" noValidate onSubmit={submit}>
+        <form className="mt-(--g) flex flex-col gap-(--g)" noValidate onSubmit={submit}>
           {failed && (
             <p key={login.failureCount + String(login.submittedAt)} role="alert" className="shake flex items-center gap-2 rounded-input bg-bad/10 px-3.5 py-2 text-small text-bad">
               <AlertCircle className="size-4 shrink-0" aria-hidden />
@@ -160,23 +160,27 @@ function SignInCard({ form, hold }: { form: UseFormReturn<Values>; hold: (on: bo
           </div>
           {/* on a phone the primary action is pinned to the bottom edge so it is always in thumb reach */}
           <div className="max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:bg-bg-base max-sm:px-(--gutter) max-sm:pb-[calc(0.75rem+var(--safe-bottom))] max-sm:pt-3 sm:fade-up" style={stagger(3)}>
-            <Button ref={submitRef} type="submit" arrow={!done} size="lg" className="h-[52px] w-full" loading={login.isPending && !done}>
+            <Button ref={submitRef} type="submit" arrow={!done} size="lg" className="h-(--field-h) w-full" loading={login.isPending && !done}>
               {done ? <><Check aria-hidden className="tick-pop" /> Signed in</> : login.isPending ? 'Signing in' : 'Sign in'}
             </Button>
           </div>
+          <p className="flex items-center gap-1.5 text-[12px] leading-snug text-text-3">
+            <Lock className="size-3 shrink-0" aria-hidden />
+            Every CV view is logged. Candidate data is used for hiring only.
+          </p>
         </form>
         {DEMO_MODE && (
-          <div className="fade-up mt-5 space-y-2 border-t pt-4 sm:mt-6 sm:pt-5" style={stagger(4)}>
+          <div className="fade-up mt-(--g) space-y-2 border-t pt-(--g)" style={stagger(4)}>
             <p className="text-micro uppercase text-text-2" id="demo-label">Try a demo role</p>
-            <div role="group" aria-labelledby="demo-label" className="space-y-2">
+            <div role="group" aria-labelledby="demo-label" className="grid grid-cols-3 gap-1 rounded-[14px] border border-white/10 bg-white/5 p-1">
               {DEMO_ACCOUNTS.map((a) => (
                 <button
                   key={a.email}
                   type="button"
                   aria-pressed={picked === a.email}
                   className={cn(
-                    'flex min-h-14 w-full flex-col justify-center rounded-[14px] border px-4 py-1.5 text-left lg:min-h-12 transition-colors duration-(--dur-fast) hover:bg-white/5',
-                    picked === a.email ? 'border-signal bg-white/5' : 'border-white/10',
+                    'h-11 whitespace-nowrap rounded-[10px] px-1 text-[13px] transition-colors duration-(--dur-fast)',
+                    picked === a.email ? 'bg-white/14 font-medium text-text-1 shadow-[inset_0_0_0_1px_var(--signal)]' : 'text-text-2 hover:bg-white/5 hover:text-text-1',
                   )}
                   onClick={() => {
                     setPicked(a.email)
@@ -186,18 +190,14 @@ function SignInCard({ form, hold }: { form: UseFormReturn<Values>; hold: (on: bo
                     submitRef.current?.focus()
                   }}
                 >
-                  <span className="text-body text-text-1">{a.label}</span>
-                  <span className="text-small text-text-3">{a.blurb}</span>
+                  {a.label}
                 </button>
               ))}
             </div>
+            <p aria-live="polite" className="min-h-5 text-small text-text-3">{DEMO_ACCOUNTS.find((a) => a.email === picked)?.blurb ?? 'Pick a role to fill in the form.'}</p>
           </div>
         )}
       </div>
-      <p className="mt-4 flex items-center gap-1.5 px-1 text-micro text-text-3 lg:mt-2.5 lg:absolute lg:inset-x-0 lg:top-full">
-        <Lock className="size-3 shrink-0" aria-hidden />
-        Every CV view is logged. Candidate data is used for hiring only.
-      </p>
     </div>
   )
 }
@@ -210,8 +210,8 @@ export function LoginPage() {
   if (user && !holding) return <Navigate to={homeFor(user.role)} replace />
 
   return (
-    <div className="min-h-dvh p-(--frame-margin)">
-      <div className="showcase-canvas flex min-h-[calc(100dvh-var(--frame-margin)*2)] flex-col gap-6 px-(--gutter) py-5 max-sm:pb-28 md:py-6">
+    <div className="min-h-dvh p-(--frame-margin) pb-[max(var(--frame-margin),var(--safe-bottom))]">
+      <div className="showcase-canvas grid min-h-[calc(100dvh-var(--frame-margin)*2)] grid-rows-[auto_minmax(0,1fr)_auto] gap-(--g-page) px-(--gutter) py-(--g-page) max-sm:pb-28 [@media(max-height:619px)]:max-sm:pb-24">
         <div aria-hidden className="showcase-bloom" />
         <header className="flex items-center justify-between gap-3">
           <p className="flex items-center gap-2 text-body font-medium">
@@ -222,18 +222,23 @@ export function LoginPage() {
           <span className="size-9 max-sm:hidden" aria-hidden />
         </header>
 
-        <main className="grid flex-1 grid-cols-[minmax(0,1fr)] content-center gap-8 max-lg:gap-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-center lg:gap-x-16">
-          <div className="relative z-10 space-y-6">
+        <main className="grid min-h-0 grid-cols-[minmax(0,1fr)] content-center gap-(--g-page) min-[900px]:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] min-[900px]:grid-rows-[auto_auto] min-[900px]:gap-x-[clamp(32px,5vw,64px)] min-[900px]:gap-y-0">
+          <div className="relative z-10 space-y-(--g) min-[900px]:col-start-1 min-[900px]:row-start-1 min-[900px]:self-end min-[900px]:pb-(--g)">
             <h1 className="text-hero text-text-1">
               Hiring that shows <span className="draw-underline">its work.</span>
             </h1>
             <p className="max-w-sm text-balance text-small text-text-2">Every score quotes the CV. Low scorers are labelled, never hidden, and nobody is auto-rejected.</p>
+          </div>
+          <div className="mx-auto w-full max-w-[34rem] min-[900px]:col-start-2 min-[900px]:row-span-2 min-[900px]:row-start-1 min-[900px]:max-w-none min-[900px]:self-center">
+            <SignInCard form={form} hold={setHolding} />
+          </div>
+          {/* the proof line is the first thing to go when the window is short */}
+          <div className="min-[900px]:col-start-1 min-[900px]:row-start-2 min-[900px]:self-start [@media(max-height:759px)]:hidden">
             <ProofLine />
           </div>
-          <SignInCard form={form} hold={setHolding} />
         </main>
 
-        <footer className="space-y-5">
+        <footer className="space-y-(--g) [@media(max-height:619px)]:hidden">
           <HairlineRule />
           <FairnessPanel variant="strip" />
         </footer>

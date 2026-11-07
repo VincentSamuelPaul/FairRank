@@ -211,3 +211,11 @@ Final values live in `tokens.css`; everything below was checked with `scripts/co
 ### 9.3 Round 4 review notes
 - The compact candidate header is column-width with rounded bottom corners (it overshot the column and read as a slab).
 - Screenshot tooling: `login-error`, `login-filled`, `login-loading` (login request held open, never reaches the backend) and `candidate-scrolled` (scrolled 600px). Login/new-requisition/scrolled shots are viewport-fold captures.
+
+## 10. Round 5
+### 10.1 Login fits every viewport (supersedes the card details of 9.1 where they differ)
+- Layout: `min-height: 100dvh` canvas as a 3-row grid (nav / main / proof strip); `main` has `min-height: 0` and centres the headline block and the card. Never `overflow: hidden` on the page: small screens scroll naturally, large ones need no scroll. Below 900px the order is nav, headline, card, proof line, strip.
+- Fluid sizing from width AND height: headline `--fs-hero: clamp(40px, min(9vw, 14vh), 150px)` (stacked layout: `clamp(40px, 8vw, 60px)`), card padding `clamp(16px, 3vh, 32px)`, field height `--field-h: clamp(44px, 6vh, 52px)`, vertical gaps `--g` / `--g-page` (clamp on vh).
+- Card (about 500px tall): demo roles are ONE segmented control (Recruiter / Delivery head / Client, 44px tall) with one description line below that follows the selection (selecting fills the form, never submits). The "Every CV view is logged..." note is INSIDE the card under the submit button (12px, text-3).
+- Short windows (height < 760px): the proof line and its label are hidden and the strip becomes one row with one-line labels. Height < 620px: the strip is hidden too. Phones keep the pinned Sign in bar.
+- Test: `scripts/login-fit.sh` (`scripts/login_fit.py`) loads the page at 1920x1080, 1536x864, 1440x900, 1366x768, 1280x720, 1024x768, 820x1180, 768x1024, 844x390, 430x932, 390x844, 375x667, 360x640 and asserts no horizontal scroll everywhere and, for desktop and tablet sizes, that the card, submit button, segmented control and in-card note are fully inside the viewport (and the page does not scroll). Screenshots: `docs/screens/round5/login/`. Run it after any login change.
