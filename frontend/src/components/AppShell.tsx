@@ -64,7 +64,8 @@ function UserMenu({ user }: { user: User }) {
   )
 }
 
-export function AppShell({ children, narrow = false, extra }: { children: React.ReactNode; narrow?: boolean; extra?: React.ReactNode }) {
+/** `fill`: the page does not scroll; the workspace fills the viewport under the top bar and its panes scroll on their own. */
+export function AppShell({ children, narrow = false, extra, fill = false }: { children: React.ReactNode; narrow?: boolean; extra?: React.ReactNode; fill?: boolean }) {
   const { data: user } = useMe()
   const staff = !!user && user.role !== 'client'
   const [palette, setPalette] = useState(false)
@@ -79,9 +80,9 @@ export function AppShell({ children, narrow = false, extra }: { children: React.
     window.addEventListener('keydown', on)
     return () => window.removeEventListener('keydown', on)
   }, [staff])
-  const wrap = narrow ? 'max-w-2xl' : 'max-w-6xl'
+  const wrap = narrow ? 'max-w-2xl' : fill ? 'max-w-[1500px]' : 'max-w-6xl'
   return (
-    <div className="relative min-h-screen bg-ws">
+    <div className={cn('relative bg-ws', fill ? 'flex h-dvh flex-col overflow-hidden' : 'min-h-screen')}>
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-surface-2 focus:p-2">
         Skip to content
       </a>
@@ -131,7 +132,7 @@ export function AppShell({ children, narrow = false, extra }: { children: React.
         <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,var(--border-strong)_22%,var(--border-strong)_78%,transparent)]" />
       </header>
       <div aria-hidden className="page-wash pointer-events-none fixed inset-x-0 top-0 z-0 h-[360px]" />
-      <main id="main" className={cn('page-enter relative mx-auto px-(--gutter) pb-24 pt-6 sm:pt-8', wrap)}>
+      <main id="main" className={cn('page-enter relative mx-auto w-full px-(--gutter)', fill ? 'flex min-h-0 flex-1 flex-col pt-2' : 'pb-24 pt-6 sm:pt-8', wrap)}>
         {children}
       </main>
       {staff && <CommandPalette open={palette} onClose={() => setPalette(false)} />}

@@ -78,6 +78,14 @@ def main() -> int:
             need = 3.0 if name.startswith("stage-") else 4.5  # stage hues are a 6px dot (non-text, 3:1); the label carries the meaning
             fails += r < need
             print(f"{name:<18}{sn:<28}{r:>6.2f}  {'pass' if r >= need else 'FAIL'}")
+    # The CV paper sheet (round 5): dark ink and the marker number on light paper
+    paper = solid("paper")
+    for label, fg in (("paper-ink", solid("paper-ink")), ("paper-ink-2 (section labels)", blend(t["paper-ink-2"], paper)), ("paper-mark-ink (marker numbers)", solid("paper-mark-ink")),
+                      ("ink on evidence marker", solid("paper-ink"))):
+        bg = blend(t["paper-mark"], paper) if label.startswith("ink on") else paper
+        r = ratio(fg, bg)
+        fails += r < 4.5
+        print(f"{'paper':<9}{label:<46}{r:>6.2f}  {'pass' if r >= 4.5 else 'FAIL'}")
     r = ratio(solid("on-accent"), solid("accent"))
     print(f"{'on-accent':<9}{'accent (primary button)':<46}{r:>6.2f}  {'pass' if r >= 4.5 else 'FAIL'}")
     return 1 if fails else 0

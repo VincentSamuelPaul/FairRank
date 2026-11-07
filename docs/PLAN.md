@@ -57,4 +57,6 @@ Never cut: evidence verification, blind scoring, client isolation, open-before-s
 - [x] Round 3: login proof line (no card), neutral colour refinement, compact candidate header; 75/75 QA; screenshots in `docs/screens/round3/`
 - [x] Round 4: login card finesse (glass, icon fields, reveal, error banner, demo rows, success tick) and one colour story; 79/79 QA, contrast script clean; screenshots in `docs/screens/round4/`
 - [x] Round 5A: login fits every viewport (`scripts/login-fit.sh`, 13 sizes), segmented demo roles, in-card note
+- [x] Round 5B: candidate screening page (no page scroll, paper CV with exact-span highlights, Blind view, one-row criteria, shortcuts) with unit tests; 82/82 QA; screenshots in `docs/screens/round5/candidate/`
+- [x] Round 5C: data hygiene check (real test CV deleted through the app, no CV files in git)
 - [ ] Still on the old styling (tokens only, not yet re-composed with the kit): requisitions list, scorecard editor, upload, pipeline, delivery head report

@@ -31,6 +31,17 @@
   --field-border-hover: rgba(255, 255, 255, 0.22);
   --autofill-bg: #121b34; /* opaque stand-in for the field so browser autofill never paints yellow/white */
 
+  /* The CV as a paper document (round 5): the SOURCE is light, the analysis stays dark. */
+  --paper: #f4efe6;
+  --paper-ink: #1b2236;
+  --paper-ink-2: rgba(27, 34, 54, 0.72); /* section labels, line numbers (>= 4.5:1 on paper) */
+  --paper-mark-ink: #1f4fa3; /* marker numbers: text, so full strength (>= 4.5:1 on paper) */
+  --paper-rule: rgba(27, 34, 54, 0.16);
+  --paper-mark: rgba(31, 79, 163, 0.14); /* evidence marker, ONLY the exact quote span */
+  --paper-mark-edge: rgba(31, 79, 163, 0.55);
+  --paper-find: rgba(27, 34, 54, 0.16); /* Find in CV: neutral ink, no new hue */
+  --paper-find-active: rgba(27, 34, 54, 0.34);
+
   /* Text (cream) */
   --text-1: #f3ebdd;
   --text-2: rgba(243, 235, 221, 0.74);

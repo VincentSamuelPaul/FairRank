@@ -1,122 +1,76 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Copy, ExternalLink, Eye, FileText, ScanLine, Send, ShieldCheck, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeft, ChevronLeft, ChevronRight, CircleHelp, Eye, MoreHorizontal, Send, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { z } from 'zod'
-import { AppShell, PageHeader } from '@/components/AppShell'
-import { EvidenceList, ScoreBadge, StageBadge } from '@/components/score'
-import { Async, Skeleton } from '@/components/states'
+import { AppShell } from '@/components/AppShell'
+import { AnalysisPane, type Tab } from '@/components/candidate/analysis-pane'
+import { CvPane } from '@/components/candidate/cv-pane'
+import { ErrorState } from '@/components/states'
+import { ScoreBadge, StageBadge } from '@/components/score'
 import { Button } from '@/components/ui/button'
-import { FieldError, Hint, Textarea } from '@/components/ui/field'
-import { Listbox } from '@/components/ui/listbox'
+import { FieldError, Textarea } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
-import { StickyBar } from '@/components/ui/sticky-bar'
-import { Tooltip } from '@/components/ui/tooltip'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
 import { post } from '@/lib/api'
 import { useMe } from '@/lib/auth'
+import { orderCriteria } from '@/lib/cv'
 import { dateTime, notice, stageLabel, years } from '@/lib/format'
-import { useCandidate, useCandidateActions } from '@/lib/queries'
-import type { CandidateDetail, CriterionScore, Stage } from '@/lib/types'
+import { prefersReducedMotion } from '@/lib/motion'
+import { useCandidate, useCandidateActions, useRanked } from '@/lib/queries'
+import type { CandidateDetail, Stage } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-function Highlighted({ text, criteria, activeId, pulse }: { text: string; criteria: CriterionScore[]; activeId: number | null; pulse: number }) {
-  const parts = useMemo(() => {
-    const spans = criteria
-      .filter((c) => c.span)
-      .map((c) => ({ id: c.criterion_id, start: c.span![0], end: c.span![1] }))
-      .sort((a, b) => a.start - b.start)
-    const out: { text: string; id?: number }[] = []
-    let at = 0
-    for (const s of spans) {
-      if (s.start < at) continue // overlapping quotes: keep the first
-      if (s.start > at) out.push({ text: text.slice(at, s.start) })
-      out.push({ text: text.slice(s.start, s.end), id: s.id })
-      at = s.end
-    }
-    if (at < text.length) out.push({ text: text.slice(at) })
-    return out
-  }, [text, criteria])
-  return (
-    <>
-      {parts.map((p, i) =>
-        p.id ? (
-          <mark key={activeId === p.id ? `${i}-${pulse}` : i} id={`ev-${p.id}`} className={cn('evidence', activeId === p.id && pulse > 0 && 'pulse')} data-active={activeId === p.id}>
-            {p.text}
-          </mark>
-        ) : (
-          <span key={i}>{p.text}</span>
-        ),
-      )}
-    </>
-  )
-}
+const NOT_OPENED = 'Open the CV first. You can submit a candidate once you have read their CV.'
+const WRONG_STAGE = 'Only candidates at the Sourced or Screened stage can be submitted.'
 
-function SubmitPanel({ c }: { c: CandidateDetail }) {
+function SubmitDialog({ c, open, onClose }: { c: CandidateDetail; open: boolean; onClose: () => void }) {
   const { submit } = useCandidateActions(c.id, c.requisition.id)
   const { toast } = useToast()
   const { register, handleSubmit } = useForm<{ note: string }>({ defaultValues: { note: '' } })
-  const why = c.can_submit
-    ? null
-    : !c.viewed
-      ? 'Open the CV first. You can submit a candidate once you have read their CV.'
-      : 'Only candidates at the Sourced or Screened stage can be submitted.'
   return (
-    <form className="space-y-3" onSubmit={handleSubmit((v) => submit.mutate(v.note, { onSuccess: () => toast('Submitted to the client with masked contacts', 'ok') }))}>
-      <p className="flex items-center gap-1.5 text-small text-text-2">
-        <Eye className="size-4 text-text-1" aria-hidden /> {c.viewed ? 'You have opened this CV.' : 'You have not opened this CV yet.'}
-      </p>
-      <div className="space-y-1.5">
-        <Label htmlFor="note">Note for the client (optional)</Label>
-        <Textarea id="note" rows={2} maxLength={500} placeholder="Why this candidate fits" {...register('note')} />
-      </div>
-      <FieldError message={submit.isError ? submit.error.message : undefined} />
-      {why ? (
-        <Tooltip content={why} className="w-full">
-          <Button type="button" className="w-full" disabled><Send /> Submit to client</Button>
-        </Tooltip>
-      ) : (
-        <Button type="submit" arrow className="w-full" loading={submit.isPending}>{submit.isPending ? 'Submitting' : 'Submit to client'}</Button>
-      )}
-      <Hint>The client sees this candidate with masked contact details. You decide; the score never submits anyone.</Hint>
-    </form>
+    <Modal open={open} onClose={onClose} title="Submit to client" description="The client sees this candidate with masked contact details. You decide; the score never submits anyone.">
+      <form className="space-y-3" onSubmit={handleSubmit((v) => submit.mutate(v.note, { onSuccess: () => { toast('Submitted to the client with masked contacts', 'ok'); onClose() } }))}>
+        <div className="space-y-1.5">
+          <Label htmlFor="note">Note for the client (optional)</Label>
+          <Textarea id="note" rows={2} maxLength={500} placeholder="Why this candidate fits" {...register('note')} />
+        </div>
+        <FieldError message={submit.isError ? submit.error.message : undefined} />
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="submit" arrow loading={submit.isPending}>{submit.isPending ? 'Submitting' : 'Submit to client'}</Button>
+        </div>
+      </form>
+    </Modal>
   )
 }
 
 const deleteSchema = z.object({ requester: z.string().trim().min(2, 'Who asked for the deletion?').max(120) })
 
-function DeletePanel({ c }: { c: CandidateDetail }) {
-  const [open, setOpen] = useState(false)
+function DeleteDialog({ c, open, onClose }: { c: CandidateDetail; open: boolean; onClose: () => void }) {
   const navigate = useNavigate()
   const { remove } = useCandidateActions(c.id, c.requisition.id)
   const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof deleteSchema>>({ resolver: zodResolver(deleteSchema), defaultValues: { requester: '' } })
   return (
-    <>
-      <Button variant="destructive" size="sm" onClick={() => setOpen(true)}>
-        <Trash2 /> Delete on request
-      </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Delete this candidate’s data?" description="This wipes the CV file, extracted text, parsed fields and scores, and removes the candidate from every list and client portal. A tombstone (ID, date, requester) is kept. It cannot be undone.">
-        <form
-          className="space-y-3"
-          onSubmit={handleSubmit((v) => remove.mutate(v.requester, { onSuccess: () => navigate(`/requisitions/${c.requisition.id}`, { replace: true }) }))}
-        >
-          <div className="space-y-1.5">
-            <Label htmlFor="requester">Requested by</Label>
-            <Input id="requester" placeholder="e.g. the candidate, by email" aria-invalid={!!errors.requester} {...register('requester')} />
-            <FieldError message={errors.requester?.message} />
-          </div>
-          <FieldError message={remove.isError ? remove.error.message : undefined} />
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="destructive" disabled={remove.isPending}>{remove.isPending ? 'Deleting…' : 'Delete permanently'}</Button>
-          </div>
-        </form>
-      </Modal>
-    </>
+    <Modal open={open} onClose={onClose} title="Delete this candidate’s data?" description="This wipes the CV file, extracted text, parsed fields and scores, and removes the candidate from every list and client portal. A tombstone (ID, date, requester) is kept. It cannot be undone.">
+      <form className="space-y-3" onSubmit={handleSubmit((v) => remove.mutate(v.requester, { onSuccess: () => navigate(`/requisitions/${c.requisition.id}`, { replace: true }) }))}>
+        <div className="space-y-1.5">
+          <Label htmlFor="requester">Requested by</Label>
+          <Input id="requester" placeholder="e.g. the candidate, by email" aria-invalid={!!errors.requester} {...register('requester')} />
+          <FieldError message={errors.requester?.message} />
+        </div>
+        <FieldError message={remove.isError ? remove.error.message : undefined} />
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="submit" variant="destructive" disabled={remove.isPending}>{remove.isPending ? 'Deleting…' : 'Delete permanently'}</Button>
+        </div>
+      </form>
+    </Modal>
   )
 }
 
@@ -126,27 +80,25 @@ function SubmissionPanel({ c, canAct }: { c: CandidateDetail; canAct: boolean })
     mutationFn: (v: { id: number; status: 'confirmed' | 'declined' }) => post(`/api/slots/${v.id}/respond/`, { status: v.status }),
     onSuccess: (_d, v) =>
       qc.setQueryData<CandidateDetail>(['candidate', c.id], (old) =>
-        old && old.submission
-          ? { ...old, submission: { ...old.submission, slots: old.submission.slots.map((s) => (s.id === v.id ? { ...s, status: v.status } : s)) } }
-          : old,
+        old && old.submission ? { ...old, submission: { ...old.submission, slots: old.submission.slots.map((s) => (s.id === v.id ? { ...s, status: v.status } : s)) } } : old,
       ),
   })
-  const sub = c.submission!
+  const sub = c.submission
+  if (!sub) return null
   return (
-    <div className="space-y-3 text-small">
+    <section className="space-y-2">
+      <h3 className="text-micro font-semibold uppercase text-text-2">Client</h3>
       <p>Submitted to the client on {dateTime(sub.submitted_at)}.</p>
-      {sub.note && <p className="text-muted-foreground">“{sub.note}”</p>}
+      {sub.note && <p className="text-text-2">“{sub.note}”</p>}
       {sub.decisions.map((d, i) => (
-        <p key={i} className="rounded-lg bg-muted/60 p-2.5">
+        <p key={i} className="rounded-input bg-surface-2 p-2.5">
           <strong>{d.decision === 'shortlist' ? 'Client shortlisted' : 'Client rejected'}</strong> · {dateTime(d.at)}
-          {d.reason && <span className="block text-muted-foreground">Reason: {d.reason}</span>}
+          {d.reason && <span className="block text-text-2">Reason: {d.reason}</span>}
         </p>
       ))}
       {sub.slots.map((s) => (
-        <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-2 p-2.5">
-          <span>
-            Interview {dateTime(s.starts_at)} · {s.duration_minutes} min · <em className="not-italic text-muted-foreground">{s.status}</em>
-          </span>
+        <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-input bg-surface-2 p-2.5">
+          <span>Interview {dateTime(s.starts_at)} · {s.duration_minutes} min · <em className="not-italic text-text-2">{s.status}</em></span>
           {canAct && s.status === 'proposed' && (
             <span className="flex gap-1.5">
               <Button size="xs" onClick={() => respond.mutate({ id: s.id, status: 'confirmed' })} disabled={respond.isPending}>Confirm</Button>
@@ -155,209 +107,295 @@ function SubmissionPanel({ c, canAct }: { c: CandidateDetail; canAct: boolean })
           )}
         </div>
       ))}
+    </section>
+  )
+}
+
+/** A small menu / popover: closes on Escape and outside click. */
+function useDismiss(open: boolean, close: () => void) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const down = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && close()
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && close()
+    document.addEventListener('mousedown', down)
+    document.addEventListener('keydown', key)
+    return () => {
+      document.removeEventListener('mousedown', down)
+      document.removeEventListener('keydown', key)
+    }
+  }, [open, close])
+  return ref
+}
+
+const KEYS: [string, string][] = [['j / k', 'Next / previous candidate'], ['e', 'Expand the next criterion'], ['/', 'Find in the CV'], ['?', 'This list']]
+
+function ShortcutHint() {
+  const [open, setOpen] = useState(false)
+  const close = useCallback(() => setOpen(false), [])
+  const ref = useDismiss(open, close)
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => {
+      if (e.key === '?' && !(e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))) setOpen((o) => !o)
+    }
+    window.addEventListener('keydown', on)
+    return () => window.removeEventListener('keydown', on)
+  }, [])
+  return (
+    <div ref={ref} className="relative max-lg:hidden">
+      <button type="button" aria-label="Keyboard shortcuts" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="grid size-9 place-items-center rounded-pill text-text-3 transition-colors duration-(--dur-fast) hover:bg-surface-2 hover:text-text-1">
+        <CircleHelp className="size-4" aria-hidden />
+      </button>
+      {open && (
+        <dl role="dialog" aria-label="Keyboard shortcuts" className="absolute right-0 top-full z-30 mt-2 w-64 space-y-2 rounded-card border bg-surface-2 p-3 text-small shadow-float">
+          {KEYS.map(([k, v]) => (
+            <div key={k} className="flex items-center justify-between gap-3">
+              <dd className="text-text-2">{v}</dd>
+              <dt><kbd className="tnum rounded-xs border px-1.5 py-0.5 text-micro text-text-1">{k}</kbd></dt>
+            </div>
+          ))}
+        </dl>
+      )}
     </div>
   )
 }
 
-/** True once the element has scrolled up under the app header. */
-function useScrolledPast() {
-  const ref = useRef<HTMLDivElement>(null)
-  const [stuck, setStuck] = useState(false)
+function MoreMenu({ c, onDelete }: { c: CandidateDetail; onDelete: () => void }) {
+  const [open, setOpen] = useState(false)
+  const close = useCallback(() => setOpen(false), [])
+  const ref = useDismiss(open, close)
+  const { move } = useCandidateActions(c.id, c.requisition.id)
+  const item = 'flex min-h-11 w-full items-center rounded-input px-3 text-left text-small hover:bg-surface-1 focus-visible:bg-surface-1'
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" aria-haspopup="menu" aria-expanded={open} aria-label="More actions" onClick={() => setOpen((o) => !o)} className="inline-flex h-11 items-center gap-1.5 rounded-pill border border-border-strong px-3.5 text-small text-text-1 transition-colors duration-(--dur-fast) hover:bg-surface-2 lg:h-10">
+        <MoreHorizontal className="size-4" aria-hidden /> <span className="max-sm:hidden">More</span>
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-full z-30 mt-2 w-60 rounded-card border bg-surface-2 p-1.5 shadow-float">
+          {c.allowed_moves.length > 0 && <p className="px-3 pb-1 pt-1.5 text-micro font-semibold uppercase text-text-2">Move stage</p>}
+          {c.allowed_moves.map((m: Stage) => (
+            <button key={m} role="menuitem" type="button" disabled={move.isPending} className={item} onClick={() => { move.mutate(m); close() }}>
+              {stageLabel(m)}
+            </button>
+          ))}
+          <div className="my-1 border-t" />
+          <button role="menuitem" type="button" className={cn(item, 'text-bad')} onClick={() => { close(); onDelete() }}>Delete on request</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const useNarrow = () => {
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 1023px)').matches)
   useEffect(() => {
-    const el = ref.current
-    if (!el || typeof IntersectionObserver === 'undefined') return
-    const io = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting && e.boundingClientRect.top < 0), { rootMargin: '-56px 0px 0px 0px' })
-    io.observe(el)
-    return () => io.disconnect()
+    if (typeof window.matchMedia !== 'function') return
+    const mq = window.matchMedia('(max-width: 1023px)')
+    const on = () => setNarrow(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
   }, [])
-  return { ref, stuck }
+  return narrow
+}
+
+function Meta({ c }: { c: CandidateDetail }) {
+  // only the fields that exist: a missing value is never shown as a dash
+  const chips = [c.experience_years !== null && years(c.experience_years), c.notice_days !== null && `Notice ${notice(c.notice_days)}`, c.location].filter(Boolean) as string[]
+  return chips.length ? (
+    <ul className="flex flex-wrap gap-1.5">
+      {chips.map((t) => <li key={t} className="rounded-pill border px-2.5 py-0.5 text-small text-text-2">{t}</li>)}
+    </ul>
+  ) : null
 }
 
 function Detail({ c }: { c: CandidateDetail }) {
   const { data: user } = useMe()
+  const navigate = useNavigate()
   const canAct = user?.role === 'recruiter'
-  const { move, retry } = useCandidateActions(c.id, c.requisition.id)
+  const { retry } = useCandidateActions(c.id, c.requisition.id)
+  const ranked = useRanked(c.requisition.id, {})
+  const narrow = useNarrow()
+  const { must, nice, all } = useMemo(() => orderCriteria(c.score.criteria), [c.score.criteria])
+  const numbers = useMemo(() => new Map(all.map((k, i) => [k.criterion_id, i + 1])), [all])
+  const [tab, setTab] = useState<Tab>('criteria')
+  const [mobile, setMobile] = useState<'analysis' | 'cv'>('analysis')
+  const [openId, setOpenId] = useState<number | null>(null)
   const [activeId, setActiveId] = useState<number | null>(null)
-  const [pulse, setPulse] = useState(0)
-  const { ref: headRef, stuck } = useScrolledPast()
-  const [tab, setTab] = useState<'evidence' | 'cv' | 'actions'>('evidence')
-  const noText = c.raw_text.trim().length === 0
-  const select = (crit: CriterionScore) => {
-    setActiveId(crit.criterion_id)
-    setPulse((n) => n + 1)
-    setTab('cv') // on a phone the CV is its own tab; on desktop both are visible
-    requestAnimationFrame(() => document.getElementById(`ev-${crit.criterion_id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }))
+  const [tick, setTick] = useState(0)
+  const [submitOpen, setSubmitOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const findRef = useRef<HTMLInputElement>(null)
+
+  const ids = ranked.data?.candidates.map((x) => x.id) ?? []
+  const pos = ids.indexOf(c.id)
+  const go = useCallback((d: number) => {
+    const next = ids[pos + d]
+    if (pos >= 0 && next) navigate(`/candidates/${next}`)
+  }, [ids, pos, navigate])
+
+  // hovering or focusing a criterion shows its quote in the CV (a short delay so sweeping the mouse does not thrash the scroll)
+  const previewTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const preview = useCallback((id: number) => {
+    clearTimeout(previewTimer.current)
+    previewTimer.current = setTimeout(() => { setActiveId(id); setTick((t) => t + 1) }, prefersReducedMotion() ? 0 : 140)
+  }, [])
+  useEffect(() => () => clearTimeout(previewTimer.current), [])
+
+  const open = (id: number | null) => {
+    setOpenId(id)
+    if (id === null) return
+    setActiveId(id)
+    if (narrow) { // phone: tapping a criterion shows its quote in the CV
+      setMobile('cv')
+      setTick((t) => t + 1)
+    }
   }
+  const fromCv = (id: number) => {
+    setTab('criteria')
+    setOpenId(id)
+    setActiveId(id)
+    if (narrow) setMobile('analysis')
+    requestAnimationFrame(() => document.getElementById(`crit-${id}`)?.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }))
+  }
+
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => {
+      const t = e.target
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (t instanceof HTMLElement && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return
+      if (document.querySelector('dialog[open]')) return
+      if (e.key === 'j') go(1)
+      else if (e.key === 'k') go(-1)
+      else if (e.key === 'e' && all.length) {
+        setTab('criteria')
+        const i = all.findIndex((k) => k.criterion_id === openId)
+        const next = all[(i + 1) % all.length].criterion_id
+        setOpenId(next)
+        setActiveId(next)
+        setTick((n) => n + 1)
+        requestAnimationFrame(() => document.getElementById(`crit-${next}`)?.scrollIntoView({ block: 'nearest' }))
+      } else if (e.key === '/') {
+        e.preventDefault()
+        setMobile('cv')
+        requestAnimationFrame(() => findRef.current?.focus())
+      }
+    }
+    window.addEventListener('keydown', on)
+    return () => window.removeEventListener('keydown', on)
+  }, [go, all, openId])
+
+  const why = c.can_submit ? undefined : !c.viewed ? NOT_OPENED : WRONG_STAGE
   const sc = c.score
-  const { submit } = useCandidateActions(c.id, c.requisition.id)
-  const { toast } = useToast()
+  const name = c.full_name || c.original_name || 'Unnamed CV'
+  const active = all.find((k) => k.criterion_id === activeId)
+  const submitBtn = canAct && !c.submission && (
+    <Button arrow disabled={!!why} disabledReason={why} onClick={() => setSubmitOpen(true)} className="max-lg:h-12 max-lg:w-full">
+      <Send aria-hidden /> Submit to client
+    </Button>
+  )
+  const caption = active && (
+    <div className="flex items-start justify-between gap-2 rounded-input bg-surface-1 px-3 py-2 text-small lg:hidden">
+      <p className="min-w-0"><strong className="font-medium">{numbers.get(active.criterion_id)}. {active.name}</strong><span className="text-text-2"> · {active.evidence_status === 'verified' ? active.points : 'No evidence'}</span>{active.rationale && <span className="mt-0.5 block text-text-2">{active.rationale}</span>}</p>
+      <button type="button" aria-label="Close" onClick={() => setActiveId(null)} className="grid size-8 shrink-0 place-items-center rounded-pill hover:bg-surface-2"><X className="size-4" aria-hidden /></button>
+    </div>
+  )
+
   return (
     <>
-      {/* compact bar: the score header collapses into this once the page header has scrolled away (zero height, so nothing jumps) */}
-      <div className="sticky top-(--header-h) z-20 h-0" aria-hidden={!stuck}>
-        <div className={cn('flex items-center justify-between gap-3 rounded-b-card border border-t-0 bg-ws/95 px-4 py-1.5 shadow-float backdrop-blur-sm transition-[opacity,transform] duration-(--dur-base) ease-ui', stuck ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0')}>
-          <p className="min-w-0 truncate text-body font-medium">{c.full_name || c.original_name || 'Unnamed CV'} <span className="text-small font-normal text-text-2">· {c.requisition.title}</span></p>
-          <ScoreBadge score={sc} />
+      <header className="shrink-0 space-y-2 border-b pb-3 lg:flex lg:min-h-[72px] lg:items-center lg:justify-between lg:gap-4 lg:space-y-0">
+        <div className="flex min-w-0 items-center gap-3">
+          <Link to={`/requisitions/${c.requisition.id}`} aria-label={`Back to ${c.requisition.title}`} title={c.requisition.title} className="grid size-11 shrink-0 place-items-center rounded-pill border border-border-strong text-text-2 transition-colors duration-(--dur-fast) hover:bg-surface-2 hover:text-text-1 lg:size-10">
+            <ArrowLeft className="size-4" aria-hidden />
+          </Link>
+          <div className="min-w-0 space-y-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="truncate text-h2 lg:text-h1">{name}</h1>
+              <StageBadge stage={c.stage} />
+            </div>
+            <p className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-small text-text-2 max-sm:[&_ul]:hidden">
+              {c.current_role && <span className="truncate">{c.current_role}</span>}
+              <Meta c={c} />
+            </p>
+          </div>
         </div>
-      </div>
-      <div ref={headRef}>
-      <PageHeader
-        back={{ to: `/requisitions/${c.requisition.id}`, label: c.requisition.title }}
-        title={c.full_name || c.original_name || 'Unnamed CV'}
-        subtitle={
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {[c.current_role, years(c.experience_years), `notice ${notice(c.notice_days)}`, c.location].filter(Boolean).join(' · ')}
-            <StageBadge stage={c.stage} />
-          </span>
-        }
-        actions={<><span className="md:hidden"><ScoreBadge score={sc} /></span><span className="max-md:hidden"><ScoreBadge score={sc} size="lg" /></span></>}
-      />
-      </div>
-      <div role="tablist" aria-label="Candidate sections" className="mb-4 grid grid-cols-3 gap-1 rounded-pill border p-1 lg:hidden">
-        {(['evidence', 'cv', 'actions'] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
-            className={cn('h-11 rounded-pill text-small capitalize transition-colors duration-(--dur-fast)', tab === t ? 'bg-accent font-medium text-on-accent' : 'text-text-2')}
-          >
-            {t === 'cv' ? 'CV' : t}
+        <div className="flex shrink-0 items-center gap-3 max-lg:justify-between">
+          <ScoreBadge score={sc} size="hdr" />
+          {pos >= 0 && (
+            <div className="flex items-center gap-1" role="group" aria-label="Candidates in this requisition">
+              <button type="button" aria-label="Previous candidate (k)" disabled={pos === 0} onClick={() => go(-1)} className="grid size-9 place-items-center rounded-pill hover:bg-surface-2 disabled:opacity-40"><ChevronLeft className="size-4" aria-hidden /></button>
+              <span className="tnum whitespace-nowrap text-small text-text-2">{pos + 1} of {ids.length}</span>
+              <button type="button" aria-label="Next candidate (j)" disabled={pos >= ids.length - 1} onClick={() => go(1)} className="grid size-9 place-items-center rounded-pill hover:bg-surface-2 disabled:opacity-40"><ChevronRight className="size-4" aria-hidden /></button>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <span className="max-lg:hidden">{submitBtn}</span>
+            {canAct && <MoreMenu c={c} onDelete={() => setDeleteOpen(true)} />}
+            <ShortcutHint />
+          </div>
+        </div>
+      </header>
+
+      <div role="tablist" aria-label="Candidate panes" className="my-2 grid shrink-0 grid-cols-2 gap-1 rounded-pill border p-1 lg:hidden">
+        {(['analysis', 'cv'] as const).map((t) => (
+          <button key={t} type="button" role="tab" aria-selected={mobile === t} onClick={() => setMobile(t)} className={cn('h-11 rounded-pill text-small transition-colors duration-(--dur-fast)', mobile === t ? 'bg-accent font-medium text-on-accent' : 'text-text-2')}>
+            {t === 'cv' ? 'CV' : 'Analysis'}
           </button>
         ))}
       </div>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_26rem]">
-        <section aria-label="CV" className={cn('min-w-0 lg:sticky lg:top-[calc(var(--header-h)+var(--gutter)/2)] lg:block lg:self-start', tab === 'cv' ? 'block' : 'hidden')}>
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <h2 className="flex items-center gap-1.5"><FileText className="size-4" aria-hidden /> CV text</h2>
-            {c.cv_file_url && (
-              <a href={c.cv_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-small text-signal hover:underline">
-                Open original {c.cv_file_kind?.toUpperCase()} <ExternalLink className="size-3.5" aria-hidden />
-              </a>
-            )}
-          </div>
-          {noText ? (
-            <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed p-10 text-center">
-              <ScanLine className="size-6 text-muted-foreground" aria-hidden />
-              <p className="font-medium">Needs manual review</p>
-              <p className="max-w-sm text-small text-muted-foreground">This file has no readable text (scanned or image-only), so it was not scored. Open the original and judge it yourself. It is not rejected or hidden.</p>
-            </div>
-          ) : (
-            <pre className="max-h-[75vh] overflow-auto whitespace-pre-wrap break-words rounded-card border bg-surface-1 p-5 font-sans text-small leading-relaxed">
-              <Highlighted text={c.raw_text} criteria={sc.criteria} activeId={activeId} pulse={pulse} />
-            </pre>
-          )}
+
+      <div className="grid min-h-0 flex-1 gap-6 pt-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <section aria-label="CV" className={cn('min-h-0 overflow-y-auto pb-24 lg:block lg:pb-6', mobile === 'cv' ? 'flex flex-col' : 'hidden')}>
+          <CvPane c={c} numbers={numbers} activeId={activeId} focusTick={tick} onSelect={fromCv} findRef={findRef} caption={caption} />
         </section>
-
-        <aside className="space-y-5" aria-label="Screening">
-          <section className={cn('space-y-3 lg:block', tab === 'evidence' ? 'block' : 'hidden')}>
-            <h2 className="">Why this score</h2>
-            {sc.state === 'scored' && <EvidenceList criteria={sc.criteria} activeId={activeId} onSelect={select} />}
-            {sc.state === 'failed' && (
-              <div role="alert" className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-small">
-                <p className="font-medium">Scoring failed, retry</p>
-                <p className="text-muted-foreground">{sc.error || 'The AI could not score this CV.'} The CV is still here to read.</p>
-                {canAct && <Button size="sm" variant="outline" onClick={() => retry.mutate()} disabled={retry.isPending || retry.isSuccess}>{retry.isSuccess ? 'Queued: refresh in a moment' : 'Retry scoring'}</Button>}
-              </div>
-            )}
-            {['needs_manual_review', 'cv_failed', 'processing', 'pending', 'no_scorecard'].includes(sc.state) && (
-              <p className="rounded-xl border border-dashed p-3 text-small text-muted-foreground">
-                {sc.state === 'needs_manual_review' && 'No score: a person needs to read this one.'}
-                {sc.state === 'cv_failed' && (sc.error || 'The file could not be read. Upload it again.')}
-                {(sc.state === 'processing' || sc.state === 'pending') && 'Still being processed. Check back in a few seconds.'}
-                {sc.state === 'no_scorecard' && 'Add a scorecard to score this CV.'}
-              </p>
-            )}
-            {sc.state === 'scored' && <Hint>Scored with {sc.model || 'AI'} against scorecard v{sc.scorecard_version}. Name, gender, age, photo and marital status were removed before scoring.</Hint>}
-          </section>
-
-          <div className={cn('space-y-5 lg:block', tab === 'actions' ? 'block' : 'hidden')}>
-          <section className="space-y-3 rounded-card border bg-surface-1 p-5">
-            <h2 className="text-body font-medium">Next step</h2>
-            {c.submission ? (
-              <SubmissionPanel c={c} canAct={canAct} />
-            ) : canAct ? (
-              <SubmitPanel c={c} />
-            ) : (
-              <p className="text-small text-muted-foreground">Not submitted yet.</p>
-            )}
-            {canAct && c.allowed_moves.length > 0 && (
-              <div className="space-y-1.5 border-t pt-3">
-                <Label htmlFor="move">Move in pipeline</Label>
-                <Listbox id="move" value="" disabled={move.isPending} placeholder={`Currently ${stageLabel(c.stage)}…`} onChange={(v) => v && move.mutate(v as Stage)} options={c.allowed_moves.map((m) => ({ value: m, label: stageLabel(m) }))} />
-                <FieldError message={move.isError ? move.error.message : undefined} />
-              </div>
-            )}
-          </section>
-
-          <section className="space-y-2 rounded-card border bg-surface-1 p-5 text-small">
-            <h2 className="text-body font-medium">Contact</h2>
-            <p>{c.email || '—'}</p>
-            <p>{c.phone || '—'}</p>
-            <p className="text-small text-muted-foreground">Clients see these masked until the interview stage.</p>
-          </section>
-
-          {c.duplicate_of && (
-            <p className="flex items-start gap-2 rounded-xl bg-muted/60 p-3 text-small">
-              <Copy className="mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>
-                Possible duplicate of{' '}
-                <Link className="underline" to={`/candidates/${c.duplicate_of.id}`}>{c.duplicate_of.full_name || c.duplicate_of.external_id}</Link>
-                {c.duplicate_of.same_requisition ? '' : ' (another requisition)'}. {c.cv_note.replace(/^Possible duplicate of [^(]*/, '')}
-              </span>
-            </p>
-          )}
-
-          <section className="space-y-3 rounded-card border bg-surface-1 p-5 text-small">
-            <h2 className="flex items-center gap-1.5 text-body font-medium"><ShieldCheck className="size-4 text-primary" aria-hidden /> Consent and access</h2>
-            {c.consent.map((k, i) => (
-              <p key={i}>
-                Consent recorded {dateTime(k.recorded_at)}: {k.source.toLowerCase()}{k.recorded_by && ` (${k.recorded_by})`}. Purpose: hiring use only.
-              </p>
-            ))}
-            <div>
-              <p className="font-medium">Opened {c.view_log.total} time{c.view_log.total === 1 ? '' : 's'}</p>
-              <ul className="mt-1 space-y-0.5 text-muted-foreground">
-                {c.view_log.recent.slice(0, 5).map((v, i) => (
-                  <li key={i}>{v.user} · {v.kind === 'cv' ? 'file' : 'profile'} · {dateTime(v.at)}</li>
-                ))}
-              </ul>
-            </div>
-            {canAct && <DeletePanel c={c} />}
-          </section>
-
-          {c.stage_events.length > 0 && (
-            <section className="space-y-2 text-small">
-              <h2 className="text-body font-medium">History</h2>
-              <ol className={cn('space-y-1 border-l pl-3 text-muted-foreground')}>
-                {c.stage_events.map((e, i) => (
-                  <li key={i}>
-                    {stageLabel(e.to)} <span className="text-small">· {e.by} · {dateTime(e.at)}</span>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          )}
-          </div>
+        <aside aria-label="Analysis" className={cn('min-h-0 flex-col lg:flex', mobile === 'analysis' ? 'flex' : 'hidden')}>
+          <AnalysisPane
+            c={c}
+            must={must}
+            nice={nice}
+            numbers={numbers}
+            tab={tab}
+            onTab={setTab}
+            openId={openId}
+            activeId={activeId}
+            onOpen={open}
+            onPreview={preview}
+            retry={canAct && <Button size="sm" variant="outline" onClick={() => retry.mutate()} disabled={retry.isPending || retry.isSuccess}>{retry.isSuccess ? 'Queued: refresh in a moment' : 'Retry scoring'}</Button>}
+            submission={<SubmissionPanel c={c} canAct={canAct} />}
+          />
         </aside>
       </div>
-      {canAct && !c.submission && (
-        <StickyBar>
-          <Button
-            size="lg"
-            arrow
-            className="w-full"
-            loading={submit.isPending}
-            disabled={!c.can_submit}
-            disabledReason={c.viewed ? 'Only candidates at the Sourced or Screened stage can be submitted.' : 'Open the CV first. You can submit a candidate once you have read their CV.'}
-            onClick={() => submit.mutate('', { onSuccess: () => toast('Submitted to the client with masked contacts', 'ok'), onError: (e) => toast(e.message, 'bad') })}
-          >
-            {submit.isPending ? 'Submitting' : 'Submit to client'}
-          </Button>
-        </StickyBar>
+
+      {submitBtn && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-ws px-(--gutter) pt-3 pb-[calc(0.75rem+var(--safe-bottom))] lg:hidden">
+          <p className="mb-2 flex items-center gap-1.5 text-micro text-text-2"><Eye className="size-3.5" aria-hidden />{c.viewed ? 'You have opened this CV.' : 'You have not opened this CV yet.'}</p>
+          {submitBtn}
+        </div>
       )}
+      {canAct && <SubmitDialog c={c} open={submitOpen} onClose={() => setSubmitOpen(false)} />}
+      {canAct && <DeleteDialog c={c} open={deleteOpen} onClose={() => setDeleteOpen(false)} />}
     </>
+  )
+}
+
+function Loading() {
+  return (
+    <div aria-busy="true" aria-label="Loading candidate" className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-[72px] items-center justify-between gap-4 border-b pb-3">
+        <div className="flex items-center gap-3"><Skeleton className="size-10 rounded-pill" /><div className="space-y-2"><Skeleton className="h-6 w-56" /><Skeleton className="h-4 w-72" /></div></div>
+        <Skeleton className="size-16 rounded-pill" />
+      </div>
+      <div className="grid min-h-0 flex-1 gap-6 pt-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div className="cv-sheet mx-auto w-full max-w-[70ch] space-y-3 p-10 max-lg:hidden">
+          {[0.5, 0.9, 0.8, 0.95, 0.6, 0.85, 0.7, 0.9, 0.4, 0.8, 0.95, 0.7].map((w, i) => <div key={i} className="h-3 animate-pulse rounded bg-paper-ink/10" style={{ width: `${w * 100}%` }} />)}
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-10 w-full rounded-pill" />
+          {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -365,10 +403,20 @@ export function CandidatePage() {
   const { id = '' } = useParams()
   const query = useCandidate(id)
   return (
-    <AppShell>
-      <Async query={query} skeleton={<div className="space-y-4"><Skeleton className="h-10 w-1/2" /><Skeleton className="h-96 w-full" /></div>}>
-        {(c) => <Detail c={c} />}
-      </Async>
+    <AppShell fill>
+      {query.isPending ? (
+        <Loading />
+      ) : query.isError ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <header className="flex min-h-[72px] shrink-0 items-center gap-3 border-b pb-3">
+            <Link to="/requisitions" aria-label="Back to requisitions" className="grid size-10 place-items-center rounded-pill border border-border-strong text-text-2 hover:bg-surface-2 hover:text-text-1"><ArrowLeft className="size-4" aria-hidden /></Link>
+            <h1 className="text-h2">Candidate</h1>
+          </header>
+          <ErrorState className="mt-6" error={query.error} onRetry={() => query.refetch()} />
+        </div>
+      ) : (
+        <Detail key={query.data.id} c={query.data} />
+      )}
     </AppShell>
   )
 }

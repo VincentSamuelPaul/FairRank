@@ -11,7 +11,7 @@ const WORD: Record<Band, string> = { strong: 'Strong', possible: 'Possible', wea
 const STROKE: Record<Band, string> = { strong: 'stroke-ok', possible: 'stroke-warn', weak: 'stroke-bad' }
 const GLOW: Record<Band, string> = { strong: '[--band:var(--ok)]', possible: '[--band:var(--warn)]', weak: '[--band:var(--bad)]' }
 const TEXT: Record<Band, string> = { strong: 'text-ok', possible: 'text-warn', weak: 'text-bad' }
-const SIZE = { sm: 'size-11 text-small', md: 'size-14 text-body', lg: 'size-24 text-h1' } as const
+const SIZE = { sm: 'size-11 text-small', md: 'size-14 text-body', hdr: 'size-16 text-h2', lg: 'size-24 text-h1' } as const
 
 const NO_SCORE: Record<string, { icon: React.ReactNode; label: string; tone?: string }> = {
   needs_manual_review: { icon: <ScanLine className="size-1/2" />, label: 'Needs manual review' },

@@ -19,6 +19,9 @@
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-track: var(--track);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --color-paper-ink-2: var(--paper-ink-2);
   --color-glass: var(--glass);
   --color-glass-strong: var(--glass-strong);
   --color-border: var(--border);
@@ -489,4 +492,71 @@ dialog.modal[open] {
 *::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.14);
   border-radius: 999px;
+}
+
+/* ---- Round 5: the CV as a paper sheet ---- */
+.cv-sheet {
+  background: var(--paper);
+  color: var(--paper-ink);
+  border-radius: var(--r-card);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 12px 32px rgba(2, 6, 20, 0.35);
+}
+.cv-sheet ::selection {
+  background: rgba(31, 79, 163, 0.28);
+}
+.cv-heading {
+  margin-top: 1.4em;
+  padding-top: 0.55em;
+  border-top: 1px solid var(--paper-rule);
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-ink-2);
+}
+.cv-mark {
+  background: var(--paper-mark);
+  border-bottom: 2px solid var(--paper-mark-edge);
+  border-radius: 2px;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 1px;
+}
+.cv-mark:focus-visible {
+  outline: 2px solid var(--paper-mark-edge);
+  outline-offset: 1px;
+}
+.cv-mark[data-active='true'] {
+  background: rgba(31, 79, 163, 0.26);
+}
+.cv-mark.pulse {
+  animation: cv-pulse 900ms var(--ease);
+}
+@keyframes cv-pulse {
+  0%, 55% { background: rgba(31, 79, 163, 0.42); box-shadow: 0 0 0 4px rgba(31, 79, 163, 0.18); }
+}
+.cv-sup {
+  margin-left: 1px;
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 0;
+  color: var(--paper-mark-ink);
+  vertical-align: super;
+  user-select: none;
+}
+.cv-find {
+  background: var(--paper-find);
+  border-radius: 2px;
+}
+.cv-find[data-active='true'] {
+  background: var(--paper-find-active);
+  box-shadow: 0 0 0 1px var(--paper-ink-2);
+}
+.cv-redact {
+  display: inline-block;
+  height: 0.9em;
+  vertical-align: -0.1em;
+  border-radius: 2px;
+  background: var(--paper-ink);
+  user-select: none;
 }

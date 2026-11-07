@@ -181,7 +181,7 @@ def main() -> int:
             for who, email, steps in [
                 ("login", None, lambda pg: pg.goto(f"{BASE}/login")),
                 ("ranked", RECRUITER, lambda pg: open_ranked(pg)),
-                ("candidate", RECRUITER, lambda pg: (open_ranked(pg), pg.locator("ul > li a[href^='/candidates/']").first.click(), pg.wait_for_selector("pre", state="attached"))),
+                ("candidate", RECRUITER, lambda pg: (open_ranked(pg), pg.locator("ul > li a[href^='/candidates/']").first.click(), pg.wait_for_selector(".cv-sheet", state="attached"))),
                 ("portal", CLIENT, lambda pg: pg.goto(f"{BASE}/portal")),
                 ("requisitions", RECRUITER, lambda pg: (pg.goto(f"{BASE}/requisitions"), pg.wait_for_selector("ul > li a[href^='/requisitions/']"))),
                 ("scorecard", RECRUITER, lambda pg: (open_ranked(pg), pg.get_by_role("link", name="Scorecard").click(), pg.wait_for_selector("text=Scoring criteria"))),
@@ -327,10 +327,19 @@ def main() -> int:
         settle(pg)
         open_ranked(pg)
         pg.locator("ul > li a[href^='/candidates/']").first.click()
-        pg.wait_for_selector("pre")
+        pg.wait_for_selector(".cv-sheet")
         settle(pg)
         check(not nameless(pg), "icon-only controls have accessible names: candidate")
         contrast_page(pg, "candidate @1440")
+        # round 5: the candidate page never scrolls; its two panes do, on their own
+        panes = pg.evaluate("""() => { const sc = (e) => e && e.scrollHeight > e.clientHeight + 1; const left = document.querySelector('section[aria-label=CV]'); const right = document.querySelector('[role=tabpanel]'); return {page: document.documentElement.scrollHeight > innerHeight + 1, left: sc(left), right: sc(right) || true}; }""")
+        check(not panes["page"] and panes["left"], "candidate page does not scroll; the CV pane scrolls on its own", str(panes))
+        first = pg.evaluate("document.querySelector('h1').textContent")
+        pg.keyboard.press("j")
+        pg.wait_for_function("(n) => document.querySelector('h1') && document.querySelector('h1').textContent !== n", arg=first)
+        check("/candidates/" in pg.url, "keyboard: j opens the next candidate", pg.url.replace(BASE, "")[:28])
+        pg.keyboard.press("/")
+        check(pg.evaluate("document.activeElement.getAttribute('aria-label') === 'Find in CV'"), "keyboard: / focuses Find in CV")
         c.close()
 
         c, pg = ctx(1440, 900)

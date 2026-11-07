@@ -21,7 +21,7 @@ export function BandPill({ band, className }: { band: Band; className?: string }
 }
 
 /** The score, or an honest statement of why there isn't one (never a fake number). */
-export function ScoreBadge({ score, size = 'md', stacked = false }: { score: ScorePayload; size?: 'md' | 'lg'; stacked?: boolean }) {
+export function ScoreBadge({ score, size = 'md', stacked = false }: { score: ScorePayload; size?: 'md' | 'hdr' | 'lg'; stacked?: boolean }) {
   return <ScoreRing value={score.total} band={score.band} state={score.state} size={size} stacked={stacked} />
 }
 
