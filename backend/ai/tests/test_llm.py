@@ -85,5 +85,22 @@ def test_falls_back_to_groq_when_gemini_fails(settings, monkeypatch):
 
 def test_no_provider_configured(settings):
     settings.LLM_PROVIDER, settings.GEMINI_API_KEY, settings.GROQ_API_KEY = "gemini", "", ""
+    settings.FALLBACK_TO_OFFLINE = False
     with pytest.raises(llm.LLMUnavailable):
+        llm.call_llm("p", JDExtraction)
+
+
+def test_no_key_falls_back_to_labelled_offline_scorer(settings):
+    settings.LLM_PROVIDER, settings.GEMINI_API_KEY, settings.GROQ_API_KEY = "gemini", "", ""
+    result = llm.call_llm("p", JDExtraction, context={"jd_text": "Senior Java Developer. Spring Boot. 5-8 years."})
+    assert result.model.startswith("offline")
+
+
+def test_configured_key_that_fails_is_not_hidden_by_offline_fallback(settings, monkeypatch):
+    """A real provider erroring must still surface as a failure (rule 9), not silently become offline scores."""
+    settings.LLM_PROVIDER, settings.GEMINI_API_KEY, settings.GROQ_API_KEY = "gemini", "k", ""
+    def boom(provider, prompt):
+        raise llm.urllib.error.URLError("down")
+    monkeypatch.setattr(llm, "_post", boom)
+    with pytest.raises(llm.LLMError):
         llm.call_llm("p", JDExtraction)

@@ -237,7 +237,7 @@ export function AnalysisPane({ c, must, nice, numbers, tab, onTab, openId, activ
             <div className="space-y-4">
               <Group label="Must-have" rows={must} numbers={numbers} text={c.raw_text} openId={openId} activeId={activeId} onOpen={onOpen} onPreview={onPreview} />
               <Group label="Nice-to-have" rows={nice} numbers={numbers} text={c.raw_text} openId={openId} activeId={activeId} onOpen={onOpen} onPreview={onPreview} />
-              <p className="flex items-center gap-1 px-1 text-small text-text-3"><ChevronRight className="size-3.5" aria-hidden />Scored with {sc.model || 'AI'} against scorecard v{sc.scorecard_version}. Name, gender, age, photo and marital status were removed before scoring.</p>
+              <p className="flex items-center gap-1 px-1 text-small text-text-3"><ChevronRight className="size-3.5" aria-hidden />Scored with {sc.model?.startsWith('offline') ? 'the built-in rule-based scorer (no AI key was available)' : sc.model || 'AI'} against scorecard v{sc.scorecard_version}. Name, gender, age, photo and marital status were removed before scoring.</p>
             </div>
           ) : (
             <p className="rounded-card border border-dashed p-4 text-small text-text-2">There are no criteria scores for this CV yet.</p>

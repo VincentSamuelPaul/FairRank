@@ -57,7 +57,11 @@ def call_llm(prompt: str, schema: type[T], *, context: dict | None = None) -> LL
     """
     providers = _provider_chain()
     if not providers:
-        raise LLMUnavailable("No LLM provider is configured (set LLM_PROVIDER and an API key).")
+        if not settings.FALLBACK_TO_OFFLINE:
+            raise LLMUnavailable("No LLM provider is configured (set LLM_PROVIDER and an API key).")
+        # No API key at all: use the rule-based scorer. Its results are labelled "offline-heuristic" everywhere.
+        log.warning("No LLM key configured; using the offline rule-based scorer.")
+        providers = ["offline"]
     last: Exception = LLMUnavailable("no provider tried")
     for provider in providers:
         try:

@@ -149,3 +149,5 @@ GEMINI_API_KEY = env("GEMINI_API_KEY")
 GEMINI_MODEL = env("GEMINI_MODEL", "gemini-3.8-flash")  # LLM_PROVIDER=offline needs no key
 GROQ_API_KEY = env("GROQ_API_KEY")
 GROQ_MODEL = env("GROQ_MODEL", "llama-3.3-70b-versatile")
+# With no API key at all, fall back to the labelled offline rule-based scorer instead of failing every CV.
+FALLBACK_TO_OFFLINE = env_bool("FALLBACK_TO_OFFLINE", True)
