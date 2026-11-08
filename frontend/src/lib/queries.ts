@@ -52,14 +52,16 @@ export function useUpdateRequisition(id: string) {
   })
 }
 
-export function useSaveScorecard(id: string) {
+/** `onSaved` runs even though the editor remounts on the new version (so the confirmation is never lost). */
+export function useSaveScorecard(id: string, onSaved?: (card: Scorecard & { rescoring: number }) => void) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (criteria: Criterion[]) =>
       api<Scorecard & { rescoring: number }>(`/api/requisitions/${id}/scorecard/`, { method: 'PUT', body: { criteria } }),
-    onSuccess: () => {
+    onSuccess: (card) => {
       qc.invalidateQueries({ queryKey: ['requisition', id] })
       qc.invalidateQueries({ queryKey: ['ranked', id] })
+      onSaved?.(card)
     },
   })
 }

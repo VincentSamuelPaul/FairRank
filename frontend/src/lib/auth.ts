@@ -58,8 +58,10 @@ export function useLogout() {
   return useMutation({
     mutationFn: () => api<void>('/api/auth/logout/', { method: 'POST' }),
     onSuccess: () => {
-      qc.clear()
+      // `qc.clear()` would detach the mounted observers, so the page would keep showing the signed-out user's data.
+      // Set "no user" on the live query (the route guard then redirects) and drop everything else that was cached.
       qc.setQueryData(ME_KEY, null)
+      qc.removeQueries({ predicate: (q) => q.queryKey[0] !== ME_KEY[0] })
     },
   })
 }

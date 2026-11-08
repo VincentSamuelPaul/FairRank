@@ -1,0 +1,9 @@
+# Deterministic end-to-end runs: the offline scorer (no LLM keys, no quota, no latency).
+# docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.e2e.yml up -d web worker
+services:
+  web:
+    environment:
+      LLM_PROVIDER: offline
+  worker:
+    environment:
+      LLM_PROVIDER: offline

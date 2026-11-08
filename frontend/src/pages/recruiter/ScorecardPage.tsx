@@ -162,8 +162,8 @@ function WeightMeter({ rows }: { rows: Row[] }) {
 }
 
 function Criteria({ req, editable }: { req: Requisition; editable: boolean }) {
-  const save = useSaveScorecard(req.id)
   const { toast } = useToast()
+  const save = useSaveScorecard(req.id, (d) => toast(`Saved as v${d.version}. ${d.rescoring > 0 ? `Re-scoring ${d.rescoring} CVs now.` : 'No CVs to re-score yet.'}`, 'ok'))
   const card = req.scorecard
   const { register, control, handleSubmit, setValue, getValues, formState: { errors, isDirty }, reset } = useForm<CriteriaValues>({
     resolver: zodResolver(criteriaSchema),
