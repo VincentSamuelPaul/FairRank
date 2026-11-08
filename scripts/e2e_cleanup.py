@@ -6,6 +6,9 @@ from requisitions.models import Requisition
 
 removed = 0
 for req in Requisition.objects.filter(title__startswith="E2E"):
+    for cand in Candidate.objects.filter(requisition=req):
+        for cv in cand.cv_files.all():
+            cv.file.delete(save=False)  # do not leave orphan files on disk
     removed += Candidate.objects.filter(requisition=req).delete()[0]
     req.scorecards.all().delete()
     req.delete()

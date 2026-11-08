@@ -42,3 +42,19 @@ def test_seed_creates_demo_data_and_is_idempotent():
     java = Requisition.objects.get(title="Senior Java Developer")
     ritika, arjun = (Score.objects.get(candidate=brief[k], scorecard=java.current_scorecard) for k in ("CND-91022", "CND-91047"))
     assert ritika.band == Score.Band.STRONG and arjun.band == Score.Band.WEAK and arjun.candidate.deleted_at is None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_seed_reset_removes_non_seed_rows_and_files(settings, tmp_path):
+    """--reset gives exactly what a fresh seed produces: extra requisitions and orphan uploads are gone."""
+    settings.MEDIA_ROOT = str(tmp_path)
+    call_command("seed")
+    from requisitions.models import Requisition
+    extra = Requisition.objects.first()
+    Requisition.objects.create(title="Scratch test requisition", client_org=extra.client_org, created_by=extra.created_by)
+    (tmp_path / "cvs").mkdir(exist_ok=True)
+    (tmp_path / "cvs" / "orphan.pdf").write_bytes(b"%PDF-1.4")
+    call_command("seed", "--reset")
+    assert not Requisition.objects.filter(title="Scratch test requisition").exists()
+    assert not (tmp_path / "cvs" / "orphan.pdf").exists()
+    assert Requisition.objects.count() == 3

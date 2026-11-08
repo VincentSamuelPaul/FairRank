@@ -3,9 +3,13 @@ through the REAL upload -> parse -> dedupe -> score pipeline (offline provider, 
 pre-computed and the demo works without LLM quota), plus some client activity.
 All data is synthetic (A9, A14)."""
 import os
+import shutil
 from datetime import timedelta
 from decimal import Decimal
+from pathlib import Path
 
+from django.conf import settings
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.test.utils import override_settings
 from django.utils import timezone
@@ -39,7 +43,13 @@ USERS = [
 class Command(BaseCommand):
     help = "Create idempotent demo users, JDs, ~31 synthetic CVs with cached scores, and some client activity."
 
+    def add_arguments(self, parser):
+        parser.add_argument("--reset", action="store_true",
+                            help="Wipe the database and uploaded CV files first, then seed (demo/dev only).")
+
     def handle(self, *args, **options):
+        if options["reset"]:
+            self._reset()
         password = os.environ.get("SEED_PASSWORD") or DEFAULT_PASSWORD
         orgs = {n: ClientOrg.objects.get_or_create(name=n)[0] for n in ORGS}
         users = {e: self._user(e, n, r, orgs.get(o), password) for e, n, r, o in USERS}
@@ -54,6 +64,14 @@ class Command(BaseCommand):
             f"Seeded {len(users)} users, {len(orgs)} client orgs, {len(reqs)} requisitions, "
             f"{added} new CVs, {activity} client/pipeline events."
         ))
+
+    def _reset(self) -> None:
+        """Drop all rows and every uploaded file so the result is exactly what a fresh seed produces."""
+        call_command("flush", interactive=False, verbosity=0)
+        media = Path(settings.MEDIA_ROOT)
+        if media.is_dir():
+            shutil.rmtree(media / "cvs", ignore_errors=True)
+        self.stdout.write("Reset: database flushed and uploaded CVs removed.")
 
     def _user(self, email, name, role, org, password) -> User:
         user, created = User.objects.get_or_create(email=email, defaults={"full_name": name, "role": role, "client_org": org})
