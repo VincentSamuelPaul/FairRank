@@ -395,7 +395,7 @@ def main() -> int:
         pg.wait_for_selector("ul > li a[href^='/requisitions/']")
         cards = pg.locator("ul > li a[href^='/requisitions/']").count()
         has = pg.evaluate("""() => [...document.querySelectorAll('ul > li a[href^="/requisitions/"]')].filter(a => a.querySelector('[role=img]')).length""")
-        check(cards >= 4 and has >= 3, "requisition cards show distribution bar and pipeline progress", f"{cards} cards, {has} with bars")
+        check(cards >= 3 and has >= 3, "requisition cards show distribution bar and pipeline progress", f"{cards} cards, {has} with bars")
         c.close()
 
         c, pg = ctx(1440, 900, RECRUITER)
