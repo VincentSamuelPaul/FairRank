@@ -62,6 +62,8 @@ services:
   caddy:
     image: caddy:2-alpine
     env_file: .env
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}  # blank in .env means "serve plain HTTP on :80" (behind a tunnel)
     ports:  # the ONLY published ports. CADDY_BIND=127.0.0.1 when a tunnel or reverse proxy is in front.
       - "${CADDY_BIND:-0.0.0.0}:80:80"
       - "${CADDY_BIND:-0.0.0.0}:443:443"

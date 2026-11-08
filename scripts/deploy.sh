@@ -15,7 +15,12 @@ echo "==> building images and (re)starting"
 echo "==> waiting for web to be healthy"
 for _ in $(seq 1 40); do
   state=$("${DC[@]}" ps --format '{{.Service}} {{.Health}}' | awk '$1=="web"{print $2}')
-  if [ "$state" = "healthy" ]; then echo "web is healthy"; "${DC[@]}" ps; exit 0; fi
+  if [ "$state" = "healthy" ]; then break; fi
   sleep 3
 done
-echo "web did not become healthy: run  docker compose logs web"; exit 1
+[ "$state" = "healthy" ] || { echo "web did not become healthy: run  docker compose logs web"; exit 1; }
+sleep 8   # let restart loops show up before judging the other services
+"${DC[@]}" ps
+bad=$("${DC[@]}" ps --format '{{.Service}} {{.State}} {{.Health}}' | awk '$2!="running" || $3=="unhealthy"')
+[ -z "$bad" ] || { echo "NOT OK:"; echo "$bad"; exit 1; }
+echo "All services are up."; exit 0

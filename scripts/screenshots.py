@@ -155,6 +155,32 @@ def run(name: str, view: str, page: Page) -> None:
         sign_in(page, CLIENT)
         page.locator("a[href^='/portal/candidates/']").first.click()
         page.wait_for_selector("pre", state="attached")
+    elif name in ("candidate-criterion", "candidate-blind"):
+        sign_in(page, RECRUITER)
+        open_ranked(page)
+        page.locator("ul > li a[href^='/candidates/']").first.click()
+        page.wait_for_selector("pre", state="attached")
+        settle(page)
+        if name == "candidate-criterion":
+            page.locator("button[aria-expanded=false]").first.click()
+        else:
+            page.get_by_role("button", name=re.compile("Blind view")).click()
+        page.wait_for_timeout(400)
+    elif name in ("portal-reject", "portal-slot", "portal-how"):
+        sign_in(page, CLIENT)
+        want = {"portal-reject": "Reject", "portal-slot": re.compile("Propose"), "portal-how": "How we screen"}[name]
+        links = page.locator("a[href^='/portal/candidates/']")
+        for i in range(links.count()):
+            page.goto(f"{BASE}/portal")
+            settle(page)
+            page.locator("a[href^='/portal/candidates/']").nth(i).click()
+            page.wait_for_selector("pre", state="attached")
+            settle(page)
+            btn = page.get_by_role("button", name=want)
+            if btn.count():
+                btn.first.click()
+                page.wait_for_timeout(500)
+                break
     else:
         raise SystemExit(f"unknown screen: {name}")
     if name != "login-loading":
