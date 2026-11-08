@@ -1,6 +1,6 @@
 # Interview notes (not part of the submission ZIP)
 
-Short answers to say aloud. Each is under 80 words. Numbers marked **[N]** were measured on the final run; see the table at the end.
+Short answers to say aloud. Each is under 80 words. Numbers were measured on the final run; see the last answer.
 
 ## Why Django plus React, and not Next.js?
 The hard part of this product is rules on the server: who may see which candidate, what counts as evidence, what a score may change. Django and DRF give me default-deny permissions, serializers, migrations and a mature test runner out of the box. React is only the interface, so one same-origin Caddy in front gives session cookies and CSRF with no CORS. Next.js would have put those rules in two places.
@@ -39,4 +39,4 @@ OCR for scanned CVs: out of the time budget, so scans are flagged for a person. 
 OCR for scans. A candidate-facing consent and deletion link. Calibrating scores against recruiter and client outcomes, using the agreement report as the data source. Then audit export, per-client branding, and recruiter teams with scoped access. The first thing I'd measure is whether clients accept Strong candidates more often than Possible ones.
 
 ## The numbers
-**[N]** backend tests, **[N]** frontend tests, 82 rendered-UI checks, 13 login-fit sizes, 36 browser end-to-end checks, a 34-check production smoke test, **[N]** assumptions labelled A1 to A23. The ten rules the brief demands each have a named test, plus a permission matrix over every endpoint for five caller types.
+279 backend tests (155 of them end-to-end API tests), 32 frontend tests, 82 rendered-UI checks, 13 login-fit sizes, 36 browser end-to-end checks, a 34-check production smoke test, and 23 assumptions labelled A1 to A23. The ten rules the brief demands each have a named test, plus a permission matrix over every endpoint for five caller types.

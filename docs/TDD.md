@@ -1,4 +1,4 @@
-GitHub: https://github.com/VincentSamuelPaul/FairRank
+GitHub: <https://github.com/VincentSamuelPaul/FairRank>
 
 # FairRank: Technical Design Document
 
@@ -47,13 +47,14 @@ Recruiters upload a pile of CVs against a job and see the best first, with reaso
 Relationships below are read from the Django models (an arrow means "belongs to"). `Tombstone` keeps only a candidate id, so it points at nothing; `Job` is the queue.
 
 ```
-ClientOrg <- User(role)              ClientOrg <- Requisition <- Scorecard(version) <- ScorecardCriterion(weight, must_have)
-                                                      ^
+ClientOrg <- User(role)
+ClientOrg <- Requisition <- Scorecard(version) <- ScorecardCriterion(weight, must_have)
 Requisition <- Candidate(stage, duplicate_of -> Candidate)
 Candidate <- CVFile | ParsedProfile(raw text, skills, notice) | Consent | StageEvent | ViewLog(user, kind, time)
-Candidate + Scorecard <- Score(status, total, band, cv_hash) <- CriterionScore(points, confidence, quote, evidence_status) -> ScorecardCriterion
+Candidate + Scorecard <- Score(status, total, band, cv_hash)
+Score <- CriterionScore(points, confidence, quote, evidence_status) -> ScorecardCriterion
 Candidate <- Submission(submitted_by) <- ClientDecision(decision, reason) | InterviewSlot
-Tombstone(candidate_id, date, requester)      Job(kind, payload, attempts, run_after)      Notification(recipient)  (mock, A10)
+Tombstone(candidate_id, date, requester)   Job(kind, payload, attempts)   Notification(recipient), mock (A10)
 ```
 
 Scorecards are immutable: an edit creates a new version and queues re-scoring, so an old score always stays explainable against the version that produced it. Scores are cached by (CV text hash, scorecard version).

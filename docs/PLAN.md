@@ -59,4 +59,4 @@ Never cut: evidence verification, blind scoring, client isolation, open-before-s
 - [x] Round 5A: login fits every viewport (`scripts/login-fit.sh`, 13 sizes), segmented demo roles, in-card note
 - [x] Round 5B: candidate screening page (no page scroll, paper CV with exact-span highlights, Blind view, one-row criteria, shortcuts) with unit tests; 82/82 QA; screenshots in `docs/screens/round5/candidate/`
 - [x] Round 5C: data hygiene check (real test CV deleted through the app, no CV files in git)
-- [ ] Still on the old styling (tokens only, not yet re-composed with the kit): requisitions list, scorecard editor, upload, pipeline, delivery head report
+- [x] Final pass: PII and secrets sweep (working tree and full history clean), seed --reset, clean-clone run, production hardening and health checks, Cloudflare Tunnel option, deploy and backup scripts, pipeline and report on design tokens, evidence-quality caps, TDD rebuilt and reviewed page by page (11 pages), INTERVIEW_NOTES.md

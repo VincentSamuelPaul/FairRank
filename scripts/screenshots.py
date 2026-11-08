@@ -162,10 +162,10 @@ def run(name: str, view: str, page: Page) -> None:
         page.wait_for_selector("h1")
         settle(page)
         if name == "candidate-criterion":
-            page.locator("button[aria-expanded=false]").first.click()
+            page.locator("ul.overflow-hidden li button[aria-expanded=false]").first.click()  # a criterion row, not the user menu
         else:
             if view == "phone":
-                page.get_by_role("button", name="CV", exact=True).click()  # Blind view lives on the CV tab on phones
+                page.get_by_text("CV", exact=True).first.click()  # Blind view lives on the CV tab on phones
             page.get_by_role("button", name=re.compile("Blind view")).click()
         page.wait_for_timeout(400)
     elif name in ("portal-reject", "portal-slot", "portal-how"):
