@@ -52,3 +52,4 @@ def test_debug_mode_allows_dev_key_and_plain_cookies():
 def test_health_endpoint_is_public_and_leaks_nothing(client):
     res = client.get("/api/health/")
     assert res.status_code == 200 and res.json() == {"status": "ok"}
+
