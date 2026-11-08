@@ -11,6 +11,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.test.utils import override_settings
 from django.utils import timezone
 
@@ -54,7 +55,9 @@ class Command(BaseCommand):
         orgs = {n: ClientOrg.objects.get_or_create(name=n)[0] for n in ORGS}
         users = {e: self._user(e, n, r, orgs.get(o), password) for e, n, r, o in USERS}
         recruiter = users["recruiter1@companya.example"]
-        with override_settings(LLM_PROVIDER="offline"):  # seed scores never depend on a live LLM
+        # One transaction: queued jobs stay invisible to a running worker (which may hold real LLM keys)
+        # until the seed has scored everything itself with the offline provider.
+        with transaction.atomic(), override_settings(LLM_PROVIDER="offline"):
             reqs = {spec.key: self._requisition(spec, recruiter, orgs[ORGS[spec.org_index]]) for spec in build_specs()}
             specs = {s.key: s for s in build_specs()}
             added = sum(self._cvs(specs[k], reqs[k], recruiter) for k in reqs)

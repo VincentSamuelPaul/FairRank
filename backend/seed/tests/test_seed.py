@@ -58,3 +58,12 @@ def test_seed_reset_removes_non_seed_rows_and_files(settings, tmp_path):
     assert not Requisition.objects.filter(title="Scratch test requisition").exists()
     assert not (tmp_path / "cvs" / "orphan.pdf").exists()
     assert Requisition.objects.count() == 3
+
+
+def test_seed_scores_never_use_a_live_provider(settings):
+    """Seeded scores are all offline-heuristic, whatever LLM provider the environment is configured with."""
+    settings.LLM_PROVIDER = "groq"
+    settings.GROQ_API_KEY = ""
+    call_command("seed")
+    models = set(Score.objects.exclude(model_name="").values_list("model_name", flat=True))
+    assert models == {"offline-heuristic-v1"}

@@ -32,3 +32,18 @@ pgdata/
 .review/
 submission/
 FairRank-submission.zip
+
+# Never commit archives, dumps, or real CV files (only synthetic CVs are generated in memory by the seed)
+*.zip
+*.sql
+*.dump
+*.pdf
+*.docx
+!docs/**/*.pdf
+sample_cvs/
+backend/media/
+.env
+.env.*
+!.env.example
+venv/
+env/
