@@ -313,10 +313,10 @@ function Detail({ c }: { c: CandidateDetail }) {
               <h1 className="truncate text-h2 lg:text-h1">{name}</h1>
               <StageBadge stage={c.stage} />
             </div>
-            <p className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-small text-text-2 max-sm:[&_ul]:hidden">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-small text-text-2 max-sm:[&_ul]:hidden">
               {c.current_role && <span className="truncate">{c.current_role}</span>}
               <Meta c={c} />
-            </p>
+            </div>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-3 max-lg:justify-between">
