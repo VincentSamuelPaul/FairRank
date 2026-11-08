@@ -26,7 +26,7 @@ export function PortalCandidatePage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h1>{c.full_name}</h1>
-                  <p className="text-text-2">{c.current_role} · {c.requisition.title}</p>
+                  <p className="text-text-2">{[c.current_role, c.requisition.title].filter((v, i, a) => v && a.indexOf(v) === i).join(" · ")}</p>
                 </div>
                 <ScoreBadge score={c.score} size="lg" />
               </div>
