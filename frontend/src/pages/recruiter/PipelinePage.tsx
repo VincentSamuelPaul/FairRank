@@ -21,7 +21,7 @@ export function PipelineBoard({ reqId }: { reqId: string }) {
       <Async query={query} isEmpty={(d) => d.columns.every((c) => c.candidates.length === 0)} empty={<EmptyState title="Nobody in the pipeline yet">Upload CVs to start.</EmptyState>}>
         {(data) => (
           <div className="-mx-(--gutter) overflow-x-auto px-(--gutter) pb-4 [scrollbar-width:thin]" tabIndex={0} role="region" aria-label="Pipeline board, scrolls sideways on small screens">
-            <div className="grid snap-x snap-mandatory grid-flow-col auto-cols-[minmax(9.5rem,1fr)] gap-3 max-sm:auto-cols-[78%]">
+            <div className="grid snap-x snap-mandatory grid-flow-col auto-cols-[minmax(8.5rem,1fr)] gap-3 max-sm:auto-cols-[78%]">
               {data.columns.map((col) => (
                 <section key={col.stage} aria-label={col.label} className="snap-start rounded-card border bg-surface-panel p-2">
                   <h3 className="flex items-center justify-between gap-2 px-1.5 py-1.5 text-small font-medium text-text-1">
@@ -36,7 +36,7 @@ export function PipelineBoard({ reqId }: { reqId: string }) {
                     {col.candidates.map((c) => (
                       <li key={c.id} className="space-y-2 rounded-input border bg-surface-1 p-3 text-small">
                         <Link to={`/candidates/${c.id}`} className="block font-medium text-text-1 hover:underline">{c.full_name}</Link>
-                        <p className="truncate text-small text-text-2">{c.current_role || c.external_id}</p>
+                        <p title={c.current_role} className="truncate text-small text-text-2">{c.current_role || c.external_id}</p>
                         <div className="flex items-center justify-between">
                           {c.band && c.score !== null ? (
                             <span className="flex items-center gap-1.5"><span className="font-semibold tabular-nums">{Math.round(c.score)}</span><BandPill band={c.band} /></span>

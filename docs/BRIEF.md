@@ -105,3 +105,6 @@ Example JD: Senior Java Developer, 5-8 years, Spring Boot, Noida, notice up to 6
 | A19 | The Retail Store Manager JD is attached to the first synthetic client org (Northwind) because the brief asks for only 2 client orgs | Synthetic seed (A9) |
 | A20 | The CV text a client reads has the value on gender, age, date of birth, marital status, photo, nationality, religion, caste and family-name lines replaced by "[hidden]". The candidate's name line stays. The stored CV is untouched | The brief hides these from scoring; showing them to the client would undercut "we treat candidates fairly" |
 | A21 | The parser treats an experience above 60 years or a notice period above 365 days as "not stated" rather than storing it | Found by input testing: absurd numbers in a CV must never become facts or break a save |
+
+| A22 | With no LLM API key configured, scoring falls back to the offline rule-based scorer (A16), labelled in the UI; a configured provider that fails is shown as "Scoring failed, retry", never replaced silently | A keyless demo must work; a real outage must not be hidden |
+| A23 | Evidence that is only a bare job title or a skills list is capped (title 65, skills list 50 points, confidence 0.5) and the scoring prompt asks for a sentence describing work done | A keyword is not proof of work done |
