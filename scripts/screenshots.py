@@ -135,6 +135,20 @@ def run(name: str, view: str, page: Page) -> None:
         settle(page)
         page.evaluate("window.scrollTo(0, 600)")
         page.wait_for_timeout(700)
+    elif name == "pipeline":
+        sign_in(page, RECRUITER)
+        open_ranked(page)
+        page.get_by_role("link", name="Pipeline", exact=True).click()
+        page.wait_for_selector("text=Submitted")
+    elif name == "report":
+        sign_in(page, "head@companya.example")
+        page.get_by_role("link", name=re.compile("AI vs recruiter")).click()
+        page.wait_for_selector("text=Time window", state="attached") if page.get_by_text("Time window").count() else page.wait_for_timeout(800)
+        page.wait_for_timeout(900)
+    elif name == "overview":
+        sign_in(page, "head@companya.example")
+        page.wait_for_selector("text=Delivery")
+        page.wait_for_timeout(900)
     elif name == "portal":
         sign_in(page, CLIENT)
     elif name == "portal-candidate":
@@ -145,7 +159,7 @@ def run(name: str, view: str, page: Page) -> None:
         raise SystemExit(f"unknown screen: {name}")
     if name != "login-loading":
         settle(page)
-    fold_only = name.startswith("login") or name == "new-requisition" or name.endswith("-scrolled")
+    fold_only = bool(os.environ.get("FOLD")) or name.startswith("login") or name == "new-requisition" or name.endswith("-scrolled")
     full = not fold_only
     dims = page.evaluate("[document.documentElement.scrollWidth, innerWidth, document.documentElement.scrollHeight, innerHeight]")
     print(f"{name}-{view}: scrollW={dims[0]} viewW={dims[1]} scrollH={dims[2]} viewH={dims[3]}" + ("  HORIZONTAL SCROLL" if dims[0] > dims[1] else ""))

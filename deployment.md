@@ -1,6 +1,6 @@
 # deployment.md
 
-Repo: https://github.com/vincentsamuelpaul/FairRank (set the real URL before submitting). Live app: not deployed from this machine; see "Deploy" below.
+Repo: https://github.com/VincentSamuelPaul/FairRank (keep it public until review is finished). Live app: not deployed from the build machine; the "Deploy" section below is the exact procedure, and the local run below reproduces everything the reviewer needs.
 
 ## Run locally (Docker, about 5 minutes)
 
@@ -16,7 +16,17 @@ docker compose exec web python manage.py seed
 
 Open http://localhost:5173 and sign in with a demo login below.
 
-- Tests: `docker compose exec web python -m pytest` (backend) and, from `frontend/`, `npm test` (Vitest).
+- Tests (all run locally, no keys needed):
+  - Backend, 252 tests: `docker compose exec web python -m pytest`
+  - Frontend, 32 tests: `docker compose exec frontend npx vitest run` (or `npm test` in `frontend/`)
+  - Rendered UI checks: `scripts/qa.sh`; login fits 13 screen sizes: `scripts/login-fit.sh`; contrast: `python3 scripts/contrast.py`
+  - Browser end-to-end for every role (36 checks): use the offline scorer so it is deterministic, then restore:
+    ```bash
+    docker compose exec web python manage.py generate_cvs /tmp/cvs && mkdir -p .review/cvs && docker compose cp web:/tmp/cvs/. .review/cvs/
+    docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.e2e.yml up -d web worker
+    scripts/e2e-ui.sh            # removes its own "E2E ..." requisitions first; seed data is never touched
+    docker compose up -d web worker   # back to the configured LLM provider
+    ```
 - Bulk-upload sample: `docker compose exec web python manage.py generate_cvs /tmp/cvs` writes the 31 synthetic CVs (PDF and DOCX, mixed layouts, one scanned, one duplicate); copy them out with `docker compose cp web:/tmp/cvs ./sample_cvs` and drop them on a requisition's **Upload CVs** tab.
 - The worker (`python manage.py run_worker`) parses and scores uploaded CVs in small batches. It starts with `docker compose up`.
 
