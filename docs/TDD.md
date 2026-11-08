@@ -44,7 +44,17 @@ Recruiters upload a pile of CVs against a job and see the best first, with reaso
 
 ## 3. Data model
 
-`User(role, client_org)` · `ClientOrg` · `Requisition` → versioned `Scorecard` → `ScorecardCriterion(weight, is_must_have)` · `Candidate(requisition, stage)` (A11) → `CVFile`, `ParsedProfile` (raw text, skills, notice, experience), `Consent`, `StageEvent` · `Score(scorecard, status, total, band, cv_hash)` → `CriterionScore(points, confidence, evidence_quote, evidence_status)` · `Submission` → `ClientDecision`, `InterviewSlot` · `ViewLog(user, candidate, kind, time)` · `Tombstone(candidate_id, date, requester)` · `Job` (queue) · `Notification` (mock, A10).
+Relationships below are read from the Django models (an arrow means "belongs to"). `Tombstone` keeps only a candidate id, so it points at nothing; `Job` is the queue.
+
+```
+ClientOrg <- User(role)              ClientOrg <- Requisition <- Scorecard(version) <- ScorecardCriterion(weight, must_have)
+                                                      ^
+Requisition <- Candidate(stage, duplicate_of -> Candidate)
+Candidate <- CVFile | ParsedProfile(raw text, skills, notice) | Consent | StageEvent | ViewLog(user, kind, time)
+Candidate + Scorecard <- Score(status, total, band, cv_hash) <- CriterionScore(points, confidence, quote, evidence_status) -> ScorecardCriterion
+Candidate <- Submission(submitted_by) <- ClientDecision(decision, reason) | InterviewSlot
+Tombstone(candidate_id, date, requester)      Job(kind, payload, attempts, run_after)      Notification(recipient)  (mock, A10)
+```
 
 Scorecards are immutable: an edit creates a new version and queues re-scoring, so an old score always stays explainable against the version that produced it. Scores are cached by (CV text hash, scorecard version).
 
@@ -89,6 +99,9 @@ The client asked for minimal, with nothing on screen that lacks a purpose. The s
 ![Client portal on a phone](screens/final/portal-candidate-phone.png)
 *Client portal on a phone: score and evidence first, three 48 px actions, contacts masked until the interview.*
 
+![Pipeline](screens/final/pipeline-desktop.png)
+*Pipeline: seven stages in their own hues, a score label on every card, a "Move to" menu; it scrolls sideways on a phone.*
+
 ![Delivery report](screens/final/report-desktop.png)
 *Delivery head: AI-versus-recruiter agreement per requisition, the disagreements named, and what clients did with each band.*
 
@@ -99,19 +112,24 @@ Key decisions: **evidence over numbers** (a score is never shown without its quo
 
 ## 8. Testing and validation
 
+Counts below were measured on the final code in this environment (Docker stack, offline scorer unless stated).
+
 | Layer | What | Result |
 |---|---|---|
-| Backend (pytest) | The ten required rule tests (evidence substring, redaction, client isolation, open-before-submit, no auto-reject, masking, dedupe, deletion, scan flagged, scoring weights), LLM retry/backoff/fallback, worker, parsing layout matrix, upload validation, plus the end-to-end suites below | 252 passed |
-| Permission matrix | Every endpoint × (anonymous, recruiter, delivery head, client of the org, client of another org), with invalid bodies so nothing changes | 32 passed |
-| Role journeys (API) | Recruiter, client and delivery-head workflows incl. double decisions, slot validation, masking at every stage, deletion on every surface, agreement-report arithmetic | 74 passed |
-| Robustness | Corrupt, encrypted and zip-bomb files, hostile search strings, parser fuzzing, failing jobs, delete-while-queued, prompt injection inside a CV, made-up and redacted-text quotes, rate limits | 48 passed |
-| Frontend (Vitest) | Login, route guards, candidate page (exact highlights, no em dash for missing data, Submit disabled until opened), sign-out, evidence logic | 32 passed |
-| Rendered UI (`scripts/qa.sh`) | Widths 375/768/1440 on every screen, states, keyboard order and focus rings, dead buttons, tabular figures, pixel-sampled contrast | all passed |
-| Login fit (`scripts/login-fit.sh`) | 13 viewport sizes, nothing clipped, no horizontal scroll | 13 of 13 |
-| Browser end-to-end (`scripts/e2e-ui.sh`) | Every workflow for every role, in a real browser on the running stack: sign-in, JD to scorecard, bulk upload with bad files, ranked list, open and submit, client decisions on a phone, another org's isolation, delivery report, access control, sign-out, API failure | 36 of 36 |
-| Live LLM smoke | Groq `qwen/qwen3.8-27b`: JD intake in 0.6 s, one CV scored in 1.2 s, every quote found in the CV | passed |
+| Backend (pytest) | 279 tests: the ten required rule tests (evidence substring, redaction, client isolation, open-before-submit, no auto-reject, masking, dedupe, deletion, scan flagged, scoring weights), LLM retry/backoff/fallback, evidence quality, worker, parsing layout matrix, upload validation, seed, production settings, and 155 end-to-end API tests | 279 passed |
+| Permission matrix | Every endpoint × (anonymous, recruiter, delivery head, client of the org, client of another org), with invalid bodies so nothing changes (33 of the 155) | passed |
+| Role journeys and robustness | Recruiter, client and delivery-head workflows; double decisions; masking at every stage; deletion on every surface; corrupt, encrypted and zip-bomb files; hostile search; prompt injection inside a CV; invented quotes; rate limits | passed |
+| Frontend (Vitest) | 32 tests: login, route guards, candidate page (exact highlights, Submit disabled until opened), sign-out, evidence logic | 32 passed |
+| Types and lint | `tsc -b`; oxlint | 0 errors (20 style warnings) |
+| Rendered UI (`scripts/qa.sh`) | 82 checks at 375/768/1440: states, keyboard order, focus rings, dead buttons, tabular figures, pixel-sampled contrast | 82 passed |
+| Login fit | 13 viewport sizes, nothing clipped | 13 of 13 |
+| Colour contrast | `scripts/contrast.py` over every token pair | 0 failures |
+| Browser end-to-end (`scripts/e2e-ui.sh`) | Every workflow for every role in a real browser: sign-in, JD to scorecard, bulk upload with bad files, ranked list, open and submit, client decisions on a phone, another org's isolation, delivery report, access control, sign-out, API failure | 36 of 36 |
+| Production build smoke (`scripts/prod-smoke.sh`) | The Caddy-served build with DEBUG off: Secure/HttpOnly/SameSite cookies, CSRF accepted with the header and refused without, no console errors or CSP violations, no horizontal scroll at 375 px for all four demo roles, security headers, no stack trace on errors | 34 of 34 |
+| Clean clone | A fresh `git clone`, `.env` copied from `.env.example`, `docker compose up`, `migrate`, `seed`: all five demo logins sign in; the full suites above pass | passed (before the last scoring and UI fixes; the same suites were re-run on the working copy afterwards) |
+| Live LLM smoke | Groq `qwen/qwen3.8-27b`: JD intake in 0.6 s, one CV scored in 1.2 s, every quote found in the CV (run earlier in the project, not re-run in the final pass) | passed |
 
-**What testing found, and fixed.** A NUL byte in the search box returned a server error; one empty file in a batch failed the whole upload; a client could shortlist an already shortlisted candidate (a second decision row); absurd values in a CV ("999 years") were stored as facts; clients could read gender, date of birth and marital status in the CV text (now hidden, A20); signing out left the signed-in page showing; saving a scorecard lost its confirmation when the editor remounted; buttons had no keyboard focus ring. Each is pinned by a regression test or an end-to-end check.
+**What testing found, and fixed.** Earlier rounds: a NUL byte in search returned a server error; one empty file failed a whole batch; a client could shortlist twice; absurd CV values ("999 years") were stored as facts; clients could read gender, date of birth and marital status in the CV text (A20); sign-out left the page up; a saved scorecard lost its confirmation. **Final pass:** a copied `.env.example` crashed settings (blank values) and an inline comment in it broke Compose; a blank `SITE_ADDRESS` left Caddy without a site address, so a production deploy reported success with Caddy crash-looping (`deploy.sh` now fails on that); a live worker could claim seed jobs and score demo CVs with the real LLM (the seed now scores inside one transaction); the evidence for "Java" was a bare job title (now capped, A23); the candidate header put a list inside a paragraph (a React console error); the login page logged a 403 for anonymous visitors (a public session endpoint now answers 200); the delivery head's header overflowed a 375 px phone; the pipeline board clipped its last columns. Each is pinned by a test or a check.
 
 ## 9. Assumptions (the brief gives no figure, so each is labelled)
 
