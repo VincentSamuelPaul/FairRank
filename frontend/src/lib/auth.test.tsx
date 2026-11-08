@@ -18,7 +18,7 @@ describe('sign out', () => {
           return new Response(null, { status: 204 })
         }
         if (!signedIn) return new Response('{}', { status: 403 })
-        if (url === '/api/auth/me/') return new Response(JSON.stringify({ id: 1, email: 'r@x.example', full_name: 'Asha Verma', role: 'recruiter', client_org: null }), { status: 200 })
+        if (url === '/api/auth/session/') return new Response(JSON.stringify({ user: { id: 1, email: 'r@x.example', full_name: 'Asha Verma', role: 'recruiter', client_org: null } }), { status: 200 })
         if (url === '/api/requisitions/' && (!init || !init.method || init.method === 'GET')) return new Response('[]', { status: 200 })
         if (url === '/api/client-orgs/') return new Response('[]', { status: 200 })
         return new Response('{}', { status: 404 })

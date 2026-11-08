@@ -19,6 +19,7 @@ def S(*codes):
 
 # (method, path with {req} {cand} {slot}, body, {caller: allowed status set})
 MATRIX = [
+    ("GET", "/api/auth/session/", None, dict(anon=S(200), rec=S(200), head=S(200), cA=S(200), cB=S(200))),
     ("GET", "/api/auth/me/", None, dict(anon=DENY, rec=S(200), head=S(200), cA=S(200), cB=S(200))),
     ("GET", "/api/client-orgs/", None, dict(anon=DENY, rec=S(200), head=S(200), cA=DENY, cB=DENY)),
     ("GET", "/api/requisitions/", None, dict(anon=DENY, rec=S(200), head=S(200), cA=DENY, cB=DENY)),

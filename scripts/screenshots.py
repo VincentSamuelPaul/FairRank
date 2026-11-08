@@ -126,12 +126,12 @@ def run(name: str, view: str, page: Page) -> None:
         sign_in(page, RECRUITER)
         open_ranked(page)
         page.locator("ul > li a[href^='/candidates/']").first.click()
-        page.wait_for_selector("pre", state="attached")
+        page.wait_for_selector("h1")
     elif name == "candidate-scrolled":
         sign_in(page, RECRUITER)
         open_ranked(page)
         page.locator("ul > li a[href^='/candidates/']").first.click()
-        page.wait_for_selector("pre", state="attached")
+        page.wait_for_selector("h1")
         settle(page)
         page.evaluate("window.scrollTo(0, 600)")
         page.wait_for_timeout(700)
@@ -154,12 +154,12 @@ def run(name: str, view: str, page: Page) -> None:
     elif name == "portal-candidate":
         sign_in(page, CLIENT)
         page.locator("a[href^='/portal/candidates/']").first.click()
-        page.wait_for_selector("pre", state="attached")
+        page.wait_for_selector("h1")
     elif name in ("candidate-criterion", "candidate-blind"):
         sign_in(page, RECRUITER)
         open_ranked(page)
         page.locator("ul > li a[href^='/candidates/']").first.click()
-        page.wait_for_selector("pre", state="attached")
+        page.wait_for_selector("h1")
         settle(page)
         if name == "candidate-criterion":
             page.locator("button[aria-expanded=false]").first.click()
@@ -174,7 +174,7 @@ def run(name: str, view: str, page: Page) -> None:
             page.goto(f"{BASE}/portal")
             settle(page)
             page.locator("a[href^='/portal/candidates/']").nth(i).click()
-            page.wait_for_selector("pre", state="attached")
+            page.wait_for_selector("h1")
             settle(page)
             btn = page.get_by_role("button", name=want)
             if btn.count():

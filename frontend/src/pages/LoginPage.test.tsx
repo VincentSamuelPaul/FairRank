@@ -102,7 +102,7 @@ describe('route guards', () => {
   })
 
   it("bounces a client away from the recruiter's page", async () => {
-    mockApi({ '/api/auth/me/': { status: 200, body: user('client', { client_org: { id: 1, name: 'Org A' } }) } })
+    mockApi({ '/api/auth/session/': { status: 200, body: { user: user('client', { client_org: { id: 1, name: 'Org A' } }) } } })
     renderApp('/requisitions')
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Your shortlist' })).toBeInTheDocument())
   })

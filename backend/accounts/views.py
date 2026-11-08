@@ -57,3 +57,12 @@ class MeView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+class SessionView(APIView):
+    """Who is signed in? Always 200: {"user": ...} or {"user": null}. Lets the SPA ask on first load without a 403 in the console."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({"user": UserSerializer(request.user).data if request.user.is_authenticated else None})

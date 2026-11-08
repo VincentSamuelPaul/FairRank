@@ -73,3 +73,10 @@ def test_client_role_requires_org_in_db(org_a):
         User.objects.bulk_create(
             [User(email="y@example.com", full_name="Y", role=Role.RECRUITER, client_org=org_a)]
         )
+
+
+def test_session_endpoint_is_200_for_everyone_and_never_leaks(api, auth, recruiter):
+    anon = api.get("/api/auth/session/")
+    assert anon.status_code == 200 and anon.json() == {"user": None}
+    me = auth(recruiter).get("/api/auth/session/").json()["user"]
+    assert me["email"] == recruiter.email and "password" not in me

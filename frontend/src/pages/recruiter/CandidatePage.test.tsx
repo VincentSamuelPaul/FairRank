@@ -27,7 +27,7 @@ const detail = (over: Partial<CandidateDetail> = {}): CandidateDetail => ({
 })
 
 function setup(c: CandidateDetail) {
-  const routes: Record<string, unknown> = { '/api/auth/me/': { id: 1, email: 'u@x.example', full_name: 'Asha', role: 'recruiter', client_org: null }, [`/api/candidates/${ID}/`]: c }
+  const routes: Record<string, unknown> = { '/api/auth/session/': { user: { id: 1, email: 'u@x.example', full_name: 'Asha', role: 'recruiter', client_org: null } }, [`/api/candidates/${ID}/`]: c }
   vi.stubGlobal('fetch', vi.fn(async (url: string) => (url in routes ? new Response(JSON.stringify(routes[url]), { status: 200 }) : new Response('{}', { status: 403 }))))
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(

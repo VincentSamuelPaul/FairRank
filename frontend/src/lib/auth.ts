@@ -25,7 +25,7 @@ export function homeFor(role: Role): string {
 
 export const ME_KEY = ['me'] as const
 
-/** The signed-in user, or null when there is no session (403 from the API). */
+/** The signed-in user, or null when there is no session (the session endpoint answers 200 with user: null). */
 export function useMe() {
   return useQuery({
     queryKey: ME_KEY,
@@ -33,7 +33,7 @@ export function useMe() {
     staleTime: 60_000,
     queryFn: async () => {
       try {
-        return await api<User>('/api/auth/me/')
+        return (await api<{ user: User | null }>('/api/auth/session/')).user
       } catch (e) {
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) return null
         throw e
