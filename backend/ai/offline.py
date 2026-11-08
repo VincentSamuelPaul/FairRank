@@ -7,6 +7,7 @@ verification, weighting, bands) is identical.
 """
 import re
 
+from ai.evidence import evidence_kind, normalize_ws
 from ai.schemas import CriterionResult, CVScoring, ExtractedCriterion, JDExtraction
 from ai.vocab import find_city, find_skills, skill_pattern
 
@@ -140,29 +141,36 @@ def _score_location(cid: int, name: str, cv: str) -> CriterionResult:
     return _result(cid, 0, 0.6, "", f"No sign of {city} or relocation in the CV")
 
 
-def _score_skill(cid: int, name: str, cv: str) -> CriterionResult:
+def _score_skill(cid: int, name: str, cv: str, original: str | None = None) -> CriterionResult:
+    """Prefer a line that describes work done. A bare job title or a skills list shows a keyword, not experience."""
     pattern = skill_pattern(name)
-    body_hit = list_hit = None
-    body_count = 0
+    work: list[str] = []
+    title_hit = list_hit = None
     for m in pattern.finditer(cv):
         line = _line_window(cv, m.start())
-        if _SKILLS_LABEL.match(line):
-            list_hit = list_hit or m
+        if original is not None and normalize_ws(line) not in normalize_ws(original):
+            continue  # redaction changed this line (e.g. a pronoun): a quote from it could not be verified
+        kind = evidence_kind(line)
+        if _SKILLS_LABEL.match(line) or kind == "skills_list":
+            list_hit = list_hit or line
+        elif kind in ("title", "fact"):
+            title_hit = title_hit or line
         else:
-            body_count += 1
-            body_hit = body_hit or m
-    if body_hit is not None:
-        quote = _line_window(cv, body_hit.start())
+            work.append(line)
+    if work:
+        quote = work[0]
         if _WEAK_CONTEXT.search(quote):
             return _result(cid, 35, 0.45, quote, f"{name} mentioned only as familiarity")
-        pts = min(100, 70 + 10 * (body_count - 1))
-        return _result(cid, pts, 0.85, quote, f"{name} used in the work history ({body_count} mention{'s' if body_count > 1 else ''})")
+        pts = min(100, 70 + 10 * (len(work) - 1))
+        return _result(cid, pts, 0.85, quote, f"{name} used in the work history ({len(work)} mention{'s' if len(work) > 1 else ''})")
+    if title_hit is not None:
+        return _result(cid, 55, 0.5, title_hit, f"{name} appears only in a job title, with no work described")
     if list_hit is not None:
-        return _result(cid, 50, 0.6, _line_window(cv, list_hit.start()), f"{name} listed under skills but not shown in the work history")
+        return _result(cid, 50, 0.5, list_hit, f"{name} listed under skills but not shown in the work history")
     return _result(cid, 0, 0.7, "", f"No mention of {name}")
 
 
-def score_cv(cv_text: str, criteria: list[dict]) -> CVScoring:
+def score_cv(cv_text: str, criteria: list[dict], original_text: str | None = None) -> CVScoring:
     results = []
     for c in criteria:
         low = c["name"].lower()
@@ -173,5 +181,5 @@ def score_cv(cv_text: str, criteria: list[dict]) -> CVScoring:
         elif "based in" in low or "location" in low or find_city(c["name"]):
             results.append(_score_location(c["id"], c["name"], cv_text))
         else:
-            results.append(_score_skill(c["id"], c["name"], cv_text))
+            results.append(_score_skill(c["id"], c["name"], cv_text, original_text))
     return CVScoring(results=results)

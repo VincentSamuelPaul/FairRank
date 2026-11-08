@@ -102,7 +102,7 @@ def _offline(schema: type[T], context: dict) -> BaseModel:
     if schema is JDExtraction:
         return offline.extract_jd(context["jd_text"])
     if schema is CVScoring:
-        return offline.score_cv(context["cv_text"], context["criteria"])
+        return offline.score_cv(context["cv_text"], context["criteria"], context.get("original_text"))
     raise LLMUnavailable(f"Offline provider cannot produce {schema.__name__}")
 
 

@@ -8,7 +8,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.db import transaction
 
 from ai import prompts
-from ai.evidence import verify_quote
+from ai.evidence import cap_weak_evidence, verify_quote
 from ai.llm import LLMError, LLMRateLimited, call_llm
 from ai.redact import redact_for_scoring
 from ai.schemas import CriterionResult, CVScoring
@@ -41,7 +41,7 @@ def weighted_total(points_and_weights: list[tuple[int, int]]) -> Decimal:
     return raw.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
-def resolve_criterion(result: CriterionResult | None, cv_text: str) -> tuple[int, float, str, str, str]:
+def resolve_criterion(result: CriterionResult | None, cv_text: str, name: str = "") -> tuple[int, float, str, str, str]:
     """Apply rule 2 to one LLM result -> (points, confidence, quote, evidence_status, rationale).
 
     An unverifiable quote is dropped and the criterion is marked "No evidence found". With no
@@ -52,14 +52,18 @@ def resolve_criterion(result: CriterionResult | None, cv_text: str) -> tuple[int
     quote = verify_quote(cv_text, result.quote)
     if quote is None:
         return 0, result.confidence, "", CriterionScore.EvidenceStatus.NO_EVIDENCE, result.rationale
-    return result.points, result.confidence, quote, CriterionScore.EvidenceStatus.VERIFIED, result.rationale
+    points, conf, kind = cap_weak_evidence(name, result.points, result.confidence, quote)
+    why = result.rationale
+    if (points, conf) != (result.points, result.confidence):
+        why = f"{why} (Capped: the only evidence is a {'job title' if kind == 'title' else 'skills list'}, not work described in the CV.)".strip()
+    return points, conf, quote, CriterionScore.EvidenceStatus.VERIFIED, why
 
 
 def build_criterion_rows(scorecard: Scorecard, scoring: CVScoring, cv_text: str) -> list[dict]:
     by_id = {r.criterion_id: r for r in scoring.results}
     rows = []
     for criterion in scorecard.criteria.all():
-        points, conf, quote, status, why = resolve_criterion(by_id.get(criterion.id), cv_text)
+        points, conf, quote, status, why = resolve_criterion(by_id.get(criterion.id), cv_text, criterion.name)
         rows.append({
             "criterion": criterion, "points": points, "confidence": conf,
             "evidence_quote": quote, "evidence_status": status, "rationale": why[:500],
@@ -123,7 +127,7 @@ def score_candidate(candidate: Candidate, scorecard: Scorecard | None = None, *,
     try:
         result = call_llm(
             prompts.scoring_prompt(redacted, criteria), CVScoring,
-            context={"cv_text": redacted, "criteria": criteria},
+            context={"cv_text": redacted, "criteria": criteria, "original_text": cv_text},
         )
     except LLMRateLimited:
         if not final_attempt:
