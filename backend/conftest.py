@@ -66,6 +66,7 @@ Experience
 Senior Java Developer, Brightwave Systems (2020 - Present)
 - Built Spring Boot microservices for payment workflows
 - Wrote Java services and tuned Hibernate queries
+- Mentored two junior Java developers on code reviews
 """
 
 WEAK_CV = """Mohan Lal
