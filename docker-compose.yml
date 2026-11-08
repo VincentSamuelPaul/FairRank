@@ -19,6 +19,12 @@ services:
 
   web:
     build: ./backend
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health/', timeout=3).status == 200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-fairrank}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fairrank}
@@ -40,6 +46,12 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-fairrank}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fairrank}
     command: python manage.py run_worker
+    healthcheck:  # run_worker touches /tmp/worker.alive every loop; healthy while it is fresh
+      test: ["CMD", "python", "-c", "import os,sys,time; sys.exit(0 if time.time() - os.path.getmtime('/tmp/worker.alive') < 300 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     volumes:
       - media:/app/media
     depends_on:
@@ -50,16 +62,33 @@ services:
   caddy:
     image: caddy:2-alpine
     env_file: .env
-    ports:
-      - "80:80"
-      - "443:443"
+    ports:  # the ONLY published ports. CADDY_BIND=127.0.0.1 when a tunnel or reverse proxy is in front.
+      - "${CADDY_BIND:-0.0.0.0}:80:80"
+      - "${CADDY_BIND:-0.0.0.0}:443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./frontend/dist:/srv/app:ro
       - static:/srv/static:ro
       - caddy_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     depends_on:
-      - web
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Optional Cloudflare Tunnel: no inbound port needed. Start with: --profile tunnel (needs TUNNEL_TOKEN in .env).
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - caddy
     restart: unless-stopped
 
 volumes:

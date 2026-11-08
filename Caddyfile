@@ -1,7 +1,23 @@
 # Serves the Vite build and proxies /api (and /admin) to Django: same origin,
 # so session cookies and CSRF just work.
+{
+	servers {
+		# Trust X-Forwarded-For from private ranges (cloudflared / LAN proxy) so the login throttle sees real client IPs.
+		trusted_proxies static private_ranges
+	}
+}
+
 {$SITE_ADDRESS::80} {
 	encode gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy same-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
 
 	handle /api/* {
 		reverse_proxy web:8000

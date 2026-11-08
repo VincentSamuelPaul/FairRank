@@ -5,6 +5,7 @@
 """
 import logging
 import time
+from pathlib import Path
 from datetime import timedelta
 
 from django.conf import settings
@@ -15,6 +16,7 @@ from audit import jobs
 from audit.models import Job
 
 log = logging.getLogger(__name__)
+HEARTBEAT = Path("/tmp/worker.alive")  # touched every loop; the Docker healthcheck checks its age
 
 
 def ensure_weekly_report_job() -> None:
@@ -33,6 +35,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("worker started")
         while True:
+            HEARTBEAT.touch()
             ensure_weekly_report_job()
             ran = jobs.run_pending()
             if options["once"] and ran == 0:

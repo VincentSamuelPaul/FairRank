@@ -25,6 +25,9 @@ DEBUG = env_bool("DEBUG", False)
 SECRET_KEY = env("SECRET_KEY")
 if not SECRET_KEY:
     raise ImproperlyConfigured("SECRET_KEY environment variable is required")
+if not DEBUG and (len(SECRET_KEY) < 32 or SECRET_KEY.lower().startswith(("change", "replace", "insecure"))):
+    # Fail fast: a short or placeholder key must never run in production.
+    raise ImproperlyConfigured("SECRET_KEY is too weak for production: use 32+ random characters (see deployment.md)")
 
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
@@ -108,8 +111,16 @@ CSRF_COOKIE_HTTPONLY = False  # the SPA reads it and echoes it in X-CSRFToken
 SECURE_COOKIES = env_bool("SECURE_COOKIES", not DEBUG)
 SESSION_COOKIE_SECURE = SECURE_COOKIES
 CSRF_COOKIE_SECURE = SECURE_COOKIES
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # Caddy / Cloudflare Tunnel terminate TLS
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+SECURE_HSTS_SECONDS = int(env("HSTS_SECONDS", "31536000")) if (SECURE_COOKIES and not DEBUG) else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+# Throttle counters must be shared by all gunicorn workers, so use a file cache, not per-process memory.
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+                      "LOCATION": env("CACHE_DIR", "/tmp/fairrank-cache")}}
 
 # --- DRF: default deny. Views must opt in to anything weaker than IsAuthenticated.
 REST_FRAMEWORK = {
@@ -117,6 +128,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_THROTTLE_RATES": {"login": env("LOGIN_RATE", "10/min")},
+    # Proxies in front of Django whose X-Forwarded-For we trust: 1 behind Caddy, 2 behind Cloudflare Tunnel + Caddy.
+    "NUM_PROXIES": int(env("NUM_PROXIES", "1")),
 }
 
 # --- Uploads

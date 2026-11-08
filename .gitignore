@@ -47,3 +47,5 @@ backend/media/
 !.env.example
 venv/
 env/
+backups/
+*.gz
