@@ -88,7 +88,7 @@ export function AppShell({ children, narrow = false, extra, fill = false }: { ch
       </a>
       <header className="sticky top-0 z-20 h-(--header-h) bg-ws">
         <div className={cn('mx-auto flex h-full items-center justify-between gap-3 px-(--gutter)', wrap)}>
-          <div className="flex h-full items-center gap-6">
+          <div className="flex h-full min-w-0 items-center gap-3 sm:gap-6">
             <Link to="/" className="flex min-h-11 items-center gap-2 text-body font-medium tracking-tight">
               <svg aria-hidden viewBox="0 0 24 24" className="size-5 text-text-1" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3 4 6v6c0 4.5 3.2 7.8 8 9 4.8-1.2 8-4.5 8-9V6l-8-3Z" />
@@ -103,7 +103,7 @@ export function AppShell({ children, narrow = false, extra, fill = false }: { ch
                     key={n.to}
                     to={n.to}
                     className={({ isActive }) =>
-                      cn('flex h-full items-center px-3 text-small transition-colors duration-(--dur-fast)', isActive ? 'font-medium text-text-1 shadow-[inset_0_-2px_0_var(--accent),0_8px_16px_-6px_color-mix(in_srgb,var(--accent)_45%,transparent)]' : 'text-text-2 hover:text-text-1')
+                      cn('flex h-full items-center px-2 text-small transition-colors sm:px-3 duration-(--dur-fast)', isActive ? 'font-medium text-text-1 shadow-[inset_0_-2px_0_var(--accent),0_8px_16px_-6px_color-mix(in_srgb,var(--accent)_45%,transparent)]' : 'text-text-2 hover:text-text-1')
                     }
                   >
                     {n.label}

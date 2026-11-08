@@ -54,7 +54,7 @@ def main() -> int:
                 page.wait_for_load_state("networkidle")
                 page.wait_for_timeout(600)
                 scroll = page.evaluate("[document.documentElement.scrollWidth, innerWidth]")
-                check(scroll[0] <= scroll[1], f"{role}: {path} has no horizontal scroll at 375px", str(scroll))
+                check(scroll[0] <= 375 and scroll[1] <= 375, f"{role}: {path} has no horizontal scroll at 375px", str(scroll))
                 check("/login" not in page.url, f"{role}: {path} stays signed in after a full reload")
             check(not problems, f"{role}: no console errors, CSP violations or 5xx", "; ".join(problems[:3]))
             # a state-changing call needs CSRF: logout through the UI proves the cookie + header round trip
