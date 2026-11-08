@@ -80,7 +80,7 @@ function Details({ req, editable }: { req: Requisition; editable: boolean }) {
       {editable && (
         <div className="flex items-center gap-3">
           <Button type="submit" variant="outline" disabled={!isDirty || update.isPending}>{update.isPending ? 'Saving…' : 'Save details'}</Button>
-          {update.isSuccess && !isDirty && <span className="text-small text-muted-foreground">Saved</span>}
+          {update.isSuccess && !isDirty && <span className="text-small text-text-2">Saved</span>}
           {update.isError && <FieldError message={update.error.message} />}
         </div>
       )}
@@ -301,7 +301,7 @@ export function ScorecardPage() {
           </section>
           <section className="space-y-3">
             <div>
-              <h2 className="font-medium">Scoring criteria {req.scorecard && <span className="font-normal text-muted-foreground">· v{req.scorecard.version}, {req.scorecard.source === 'ai' ? 'drafted by AI' : 'edited by a recruiter'}</span>}</h2>
+              <h2 className="font-medium">Scoring criteria {req.scorecard && <span className="font-normal text-text-2">· v{req.scorecard.version}, {req.scorecard.source === 'ai' ? 'drafted by AI' : 'edited by a recruiter'}</span>}</h2>
               <Hint>Must-haves default to weight 3, nice-to-haves to 1. Each CV gets 0–100 per criterion; the total is the weighted average. Every edit makes a new version, so old scores stay explainable.</Hint>
             </div>
             <Criteria key={req.scorecard?.id ?? 'none'} req={req} editable={editable} />
@@ -310,7 +310,7 @@ export function ScorecardPage() {
             <button type="button" className="text-small text-signal hover:underline" onClick={() => setShowJd((s) => !s)} aria-expanded={showJd}>
               {showJd ? 'Hide' : 'Show'} the original job description
             </button>
-            {showJd && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-muted/60 p-3 text-small">{req.jd_text}</p>}
+            {showJd && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-surface-1 p-3 text-small">{req.jd_text}</p>}
           </section>
         </div>
       )}

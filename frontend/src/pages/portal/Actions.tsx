@@ -121,12 +121,12 @@ export function DecisionActions({ card }: { card: ClientCard }) {
 export function DecisionStatus({ card }: { card: ClientCard }) {
   const slot = card.slots.find((s) => s.status !== 'declined')
   if (card.stage === 'rejected')
-    return <p className="rounded-input bg-surface-2 p-3 text-small">Rejected{card.decision?.reason && <span className="block text-muted-foreground">Reason: {card.decision.reason}</span>}</p>
+    return <p className="rounded-input bg-surface-2 p-3 text-small">Rejected{card.decision?.reason && <span className="block text-text-2">Reason: {card.decision.reason}</span>}</p>
   if (slot && ['interview', 'offered', 'joined'].includes(card.stage))
     return (
       <p className="rounded-input bg-surface-2 p-3 text-small">
         Interview proposed for <strong>{dateTime(slot.starts_at)}</strong> · {slot.duration_minutes} min · {slot.status}
-        {['offered', 'joined'].includes(card.stage) && <span className="block text-muted-foreground">Now at the {card.stage} stage.</span>}
+        {['offered', 'joined'].includes(card.stage) && <span className="block text-text-2">Now at the {card.stage} stage.</span>}
       </p>
     )
   if (card.stage === 'shortlisted') return <p className="rounded-input bg-surface-2 p-3 text-small">You shortlisted this candidate.</p>

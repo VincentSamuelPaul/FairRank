@@ -46,7 +46,7 @@ export function RequisitionLayout() {
             className={({ isActive }) =>
               cn(
                 '-mb-px flex min-h-11 items-center whitespace-nowrap border-b-2 px-3 text-small',
-                isActive ? 'border-signal font-medium text-text-1' : 'border-transparent text-muted-foreground hover:text-foreground',
+                isActive ? 'border-signal font-medium text-text-1' : 'border-transparent text-text-2 hover:text-text-1',
               )
             }
           >

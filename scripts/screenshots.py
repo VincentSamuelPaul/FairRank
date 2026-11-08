@@ -164,6 +164,8 @@ def run(name: str, view: str, page: Page) -> None:
         if name == "candidate-criterion":
             page.locator("button[aria-expanded=false]").first.click()
         else:
+            if view == "phone":
+                page.get_by_role("button", name="CV", exact=True).click()  # Blind view lives on the CV tab on phones
             page.get_by_role("button", name=re.compile("Blind view")).click()
         page.wait_for_timeout(400)
     elif name in ("portal-reject", "portal-slot", "portal-how"):
