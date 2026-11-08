@@ -32,6 +32,17 @@ def test_production_defaults_are_secure():
     assert r.stdout.split() == ["True", "True", "True", "Lax", "True", "False", "DENY"]
 
 
+def test_blank_env_values_fall_back_to_defaults():
+    """A copied .env.example has every name present but empty: that must not crash or open anything up."""
+    blanks = {n: "" for n in ["DEBUG", "ALLOWED_HOSTS", "CSRF_TRUSTED_ORIGINS", "SECURE_COOKIES", "MAX_UPLOAD_BYTES",
+                              "MAX_FILES_PER_BATCH", "LOGIN_RATE", "HSTS_SECONDS", "NUM_PROXIES", "CACHE_DIR",
+                              "WORKER_BATCH_SIZE", "WORKER_POLL_SECONDS", "WORKER_BACKOFF_SECONDS", "LLM_PROVIDER",
+                              "MEDIA_ROOT", "STATIC_ROOT"]}
+    r = run_settings(SECRET_KEY="x" * 40, **blanks)
+    assert r.returncode == 0, r.stderr
+    assert r.stdout.split() == ["True", "True", "True", "Lax", "True", "False", "DENY"]
+
+
 def test_debug_mode_allows_dev_key_and_plain_cookies():
     r = run_settings(SECRET_KEY="dev", DEBUG="true")
     assert r.returncode == 0 and r.stdout.split()[:2] == ["False", "False"]
