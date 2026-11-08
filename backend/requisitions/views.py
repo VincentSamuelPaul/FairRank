@@ -123,7 +123,7 @@ class RescoreView(APIView):
 
 
 def _filter_rows(qs, params):
-    q = (params.get("q") or "").strip()
+    q = (params.get("q") or "").replace("\x00", "").strip()  # Postgres text cannot hold NUL
     if q:
         qs = qs.filter(Q(full_name__icontains=q) | Q(external_id__icontains=q) | Q(profile__raw_text__icontains=q)
                        | Q(profile__current_role__icontains=q))

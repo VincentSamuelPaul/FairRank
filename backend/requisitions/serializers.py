@@ -43,7 +43,8 @@ class RequisitionUpdateSerializer(serializers.ModelSerializer):
 
 
 class UploadSerializer(serializers.Serializer):
-    files = serializers.ListField(child=serializers.FileField(), allow_empty=False)
+    # empty files are allowed through here so validate_upload can reject just that one with a reason (one bad file never fails the batch)
+    files = serializers.ListField(child=serializers.FileField(allow_empty_file=True), allow_empty=False)
     consent_confirmed = serializers.BooleanField()
 
     def validate_files(self, value):

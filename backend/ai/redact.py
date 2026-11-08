@@ -94,3 +94,15 @@ def mask_contacts_in_text(text: str) -> str:
     out = _EMAIL.sub(lambda m: mask_email(m.group()), text)
     out = _URL.sub("•••", out)
     return _PHONE.sub(lambda m: mask_phone(m.group()) if len(re.sub(r"\D", "", m.group())) >= 10 else m.group(), out)
+
+
+def hide_protected_lines(text: str) -> str:
+    """Client-facing CV text: the value on gender, age, date of birth, marital status, photo, nationality, religion, caste and
+    family-name lines is replaced by "[hidden]". The candidate's own name line is kept (clients need it). Shown text only;
+    the stored CV is untouched (A20)."""
+    def repl(m: re.Match) -> str:
+        label = m.group("label")
+        if re.fullmatch(r"[ \t\-•*▪●]*(?:(?:candidate|full)[ \t]+)?name[ \t]*[:\-–][ \t]*", label, re.I):
+            return m.group(0)
+        return f"{label}[hidden]"
+    return _LABELLED_LINE.sub(repl, text)

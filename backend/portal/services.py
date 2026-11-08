@@ -44,6 +44,8 @@ def client_decide(candidate: Candidate, client: User, decision: str, reason: str
     """A human decision by the client. Shortlist or reject (reason required); never driven by a score."""
     if candidate.stage not in (Stage.SUBMITTED, Stage.SHORTLISTED):
         raise Conflict("A decision was already made for this candidate.")
+    if candidate.stage == Stage.SHORTLISTED and decision == ClientDecision.Decision.SHORTLIST:
+        raise Conflict("This candidate is already shortlisted.")
     if decision == ClientDecision.Decision.REJECT and not reason.strip():
         raise ValueError("A reason is required to reject a candidate.")
     sub = candidate.submission

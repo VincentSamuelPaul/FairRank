@@ -260,11 +260,12 @@ def parse_profile(text: str) -> ParsedData:
         if re.search(r"experience|exp\b", text[line_start: line_end if line_end != -1 else len(text)], re.I):
             exp = Decimal(m.group(1))
             break
-    data.experience_years = exp
+    data.experience_years = exp if exp is not None and exp <= 60 else None  # an absurd number is not a fact
     data.skills = _skills(text)
     notice = _first(r"notice(?:\s*period)?\s*[:\-–]?\s*(?:of\s*)?(\d+)\s*(day|week|month)s?", text)
     if notice:
-        data.notice_days = int(notice.group(1)) * {"day": 1, "week": 7, "month": 30}[notice.group(2).lower()]
+        days = int(notice.group(1)) * {"day": 1, "week": 7, "month": 30}[notice.group(2).lower()]
+        data.notice_days = days if days <= 365 else None
     elif _first(r"notice(?:\s*period)?\s*[:\-–]?\s*immediate|immediate(?:ly)?\s*joiner", text):
         data.notice_days = 0
     loc = _first(r"^\s*(?:current\s+)?(?:location|city)\s*[:\-–]\s*(.+)$", text, re.I | re.M)

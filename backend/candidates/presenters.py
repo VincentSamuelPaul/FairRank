@@ -3,7 +3,7 @@
 from django.db.models import Prefetch
 
 from ai.evidence import locate_quote
-from ai.redact import mask_contacts_in_text, mask_email, mask_phone
+from ai.redact import hide_protected_lines, mask_contacts_in_text, mask_email, mask_phone
 from audit.models import ViewLog
 from candidates.models import Candidate, CVFile, Stage
 from candidates.services import allowed_recruiter_moves
@@ -195,6 +195,6 @@ def client_card(c: Candidate, scorecard: Scorecard | None, *, detail: bool = Fal
         "slots": [slot_payload(s) for s in sub.slots.all()],
     }
     if detail:
-        text = p.raw_text if p else ""
+        text = hide_protected_lines(p.raw_text) if p else ""  # A20
         card["cv_text"] = text if c.stage in UNMASKED_STAGES else mask_contacts_in_text(text)
     return card
