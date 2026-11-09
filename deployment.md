@@ -1,7 +1,7 @@
 # deployment.md
 
 Repo: https://github.com/VincentSamuelPaul/FairRank (keep it public until the review is finished).
-Live app: not deployed from the build environment. Section 3 is the exact procedure; section 2 reproduces everything a reviewer needs on one machine.
+Live app: https://fairrank.vincents.systems (synthetic data, demo logins in section 4). It currently runs the Docker development stack behind a Cloudflare Tunnel, not the production Caddy build; section 3 is the exact procedure for the production build, and section 1 reproduces everything a reviewer needs on one machine.
 
 ## 1. Run it locally (Docker, about 5 minutes)
 
@@ -80,7 +80,7 @@ Assumes a Linux machine with Docker (Compose v2) and git, and a domain whose DNS
 - Browser dev tools: no red errors; the session cookie is `Secure`, `HttpOnly`, `SameSite=Lax`.
 - Rotate the demo passwords or reseed without demo users before sharing the link publicly.
 
-Not verified here: this environment cannot reach Cloudflare or a public domain, so option A and B were checked only up to the Caddy container (production settings, health, headers, cookies and CSRF were tested end to end on the Docker stack at `http://localhost:8080`). Option A's `NUM_PROXIES=2` is the documented expectation for tunnel plus Caddy, not something measured here.
+Not verified: the Cloudflare Tunnel was used for the live demo with the development stack, so options A and B for the production build were checked only up to the Caddy container (production settings, health, headers, cookies and CSRF were tested end to end on the Docker stack at `http://localhost:8080`). Option A's `NUM_PROXIES=2` is the documented expectation for tunnel plus Caddy, not something measured here.
 
 ## 4. Demo logins (synthetic; password `FairRank-demo-1` unless `SEED_PASSWORD` is set)
 
@@ -110,7 +110,7 @@ Identical to `.env.example`.
 
 ## 6. Known limits
 
-- Not deployed from the build environment (see section 3 for what was and was not verified).
+- The live site runs the development stack (Django DEBUG on, demo-login chips visible). The production build was tested on localhost only; section 3 says what was and was not verified.
 - Scanned or image-only PDFs are not OCR'd; they are flagged "Needs manual review".
 - Email and SMS are mocked (a notifications log).
 - Free-tier LLM quotas cap batch speed; the queue batches and backs off on 429.

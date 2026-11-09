@@ -2,7 +2,7 @@ GitHub: <https://github.com/VincentSamuelPaul/FairRank>
 
 # FairRank: Technical Design Document
 
-**Live app:** not deployed from this environment; see `deployment.md` for the 20-minute deploy checklist and demo logins. Everything below was run on the local Docker Compose stack.
+**Live app:** https://fairrank.vincents.systems (synthetic data; demo logins in `deployment.md`). It runs the Docker development stack behind a Cloudflare Tunnel: all four demo roles were signed in over HTTPS and the session and CSRF cookies are Secure and HttpOnly. The production build (Caddy, DEBUG off, strict headers) was tested separately on localhost and is what `deployment.md` section 3 deploys.
 
 *Client: Company A, Noida (contract and permanent hiring for IT services, banking back-office and retail). Core build: Software Engineering slice, roles recruiter and client hiring manager, plus a delivery-head view. Every assumption is labelled A1 to A23 and listed in section 9.*
 
