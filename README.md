@@ -1,6 +1,6 @@
 # FairRank
 
-AI resume screening for recruiters, and a phone-first shortlist portal for clients. Every score shows its evidence, nobody is ever auto-rejected, and the AI never sees a candidate's name, gender, age, photo or marital status.
+AI resume screening for recruiters, and a phone-first shortlist portal for clients. Every score shows its evidence, nobody is ever auto-rejected, and the scoring step never sees a candidate's name, gender, age, photo or marital status (people on the screens do see some of them; see "Who sees what" below).
 
 Built for Company A (a Noida staffing firm: IT services, banking back-office, retail) as a solo project. Core slice: recruiter and client hiring-manager roles, plus a delivery-head view.
 
@@ -22,7 +22,7 @@ Built for Company A (a Noida staffing firm: IT services, banking back-office, re
 
 1. **Never auto-reject.** Low scorers are labelled, never hidden. No code path changes a candidate's stage from a score.
 2. **Every score shows evidence.** The quote must be an exact substring of the CV text (whitespace normalised). If it isn't, the quote is dropped and the criterion reads "No evidence found". A title or a skills list alone is capped, because a keyword is not proof of work done.
-3. **Blind scoring.** Name, gender, age, photo and marital status are removed in `ai/redact.py` before any text leaves the server.
+3. **Blind scoring.** Name, gender, age, photo and marital status (plus contacts, family names and gendered pronouns) are removed in `ai/redact.py` before any text goes to the scorer. This protects the **score**; it does not hide anything from the people using the app (see below).
 4. **Open before submit.** A recruiter can submit a candidate only after opening the CV. Enforced on the server (403), not just in the UI.
 5. **Client isolation.** Clients only see candidates submitted to their organisation, through one queryset. Another organisation's candidate is a 404.
 6. **Masked contacts** for clients until the interview stage.
@@ -30,6 +30,22 @@ Built for Company A (a Noida staffing firm: IT services, banking back-office, re
 8. **Consent and deletion.** Consent is recorded per candidate. Deletion on request wipes the file, text, parsed fields and scores, and leaves a tombstone.
 9. **Honest unsure states.** A scanned PDF reads "Needs manual review" with no fake score. An AI failure reads "Scoring failed, retry" with the CV still visible. Low confidence reads "Unverified".
 10. **No secrets in the repository.** Everything comes from the environment, and every CV in the repo is synthetic.
+
+## Who sees what
+
+Blind scoring means the **score** is computed without identity. It does not make the screens anonymous.
+
+| | Recruiter | Client hiring manager | The scorer (LLM or offline) |
+|---|---|---|---|
+| Name | Shown | Shown | Removed |
+| Email and phone | Shown | Masked (`a•••@e•••.com`) until the interview stage, then shown | Removed |
+| Gender, age or date of birth, marital status, photo, nationality, religion, caste, family names (labelled CV lines) | Shown in the CV | Replaced with `[hidden]` | Removed |
+| Gendered pronouns in the CV's prose | Shown | Shown (not rewritten) | Neutralised |
+| The rest of the CV | Shown | Shown | Shown |
+
+The recruiter can switch on **Blind view** on the candidate page to mask identity in what they are reading. Clients never receive the raw values for masked fields; masking happens on the server.
+
+**Known gap, stated plainly:** a client sees the candidate's name and any pronouns in the CV's prose, so they can still infer gender. Blind scoring keeps identity out of the ranking, not out of the client's own decision. Hiding names from clients too is a product choice the brief did not ask for.
 
 ## Run it locally (about 5 minutes)
 
