@@ -11,6 +11,8 @@ export default defineConfig({
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   test: { environment: 'jsdom', setupFiles: ['./src/test/setup.ts'], globals: false },
   server: {
+    // Hostnames the dev server answers to (Vite blocks unknown Host headers). Comma-separated list in VITE_ALLOWED_HOSTS.
+    allowedHosts: (process.env.VITE_ALLOWED_HOSTS ?? '').split(',').map((h) => h.trim()).filter(Boolean),
     proxy: {
       '/api': { target, changeOrigin: false },
       '/admin': { target, changeOrigin: false },
