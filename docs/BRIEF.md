@@ -108,3 +108,4 @@ Example JD: Senior Java Developer, 5-8 years, Spring Boot, Noida, notice up to 6
 
 | A22 | With no LLM API key configured, scoring falls back to the offline rule-based scorer (A16), labelled in the UI; a configured provider that fails is shown as "Scoring failed, retry", never replaced silently | A keyless demo must work; a real outage must not be hidden |
 | A23 | Evidence that is only a bare job title or a skills list is capped (title 65, skills list 50 points, confidence 0.5) and the scoring prompt asks for a sentence describing work done | A keyword is not proof of work done |
+| A24 | Redaction is rule-based minimisation: address lines, reference blocks, contacts and protected attributes are removed before scoring and hidden from clients, but work history, employers, city and current CTC are still sent to a hosted scorer, and an address inside prose is not caught | Scoring needs the work history; the limit is stated rather than hidden |

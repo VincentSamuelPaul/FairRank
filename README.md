@@ -22,7 +22,7 @@ Built for Company A (a Noida staffing firm: IT services, banking back-office, re
 
 1. **Never auto-reject.** Low scorers are labelled, never hidden. No code path changes a candidate's stage from a score.
 2. **Every score shows evidence.** The quote must be an exact substring of the CV text (whitespace normalised). If it isn't, the quote is dropped and the criterion reads "No evidence found". A title or a skills list alone is capped, because a keyword is not proof of work done.
-3. **Blind scoring.** Name, gender, age, photo and marital status (plus contacts, family names and gendered pronouns) are removed in `ai/redact.py` before any text goes to the scorer. This protects the **score**; it does not hide anything from the people using the app (see below).
+3. **Blind scoring.** Name, gender, age, photo and marital status (plus contacts, address lines, reference lines, family names and gendered pronouns) are removed in `ai/redact.py` before any text goes to the scorer. This protects the **score**; it does not hide anything from the people using the app (see below).
 4. **Open before submit.** A recruiter can submit a candidate only after opening the CV. Enforced on the server (403), not just in the UI.
 5. **Client isolation.** Clients only see candidates submitted to their organisation, through one queryset. Another organisation's candidate is a 404.
 6. **Masked contacts** for clients until the interview stage.
@@ -33,15 +33,15 @@ Built for Company A (a Noida staffing firm: IT services, banking back-office, re
 
 ## Who sees what
 
-Blind scoring means the **score** is computed without identity. It does not make the screens anonymous.
+Blind scoring means the **score** is computed without identity. It does not make the screens anonymous, and it is minimisation, not anonymisation: a hosted scorer still receives the work history, employers, city and current CTC, and an address written inside a sentence is not caught. The public demo uses the offline scorer, so no CV leaves the server.
 
 | | Recruiter | Client hiring manager | The scorer (LLM or offline) |
 |---|---|---|---|
 | Name | Shown | Shown | Removed |
 | Email and phone | Shown | Masked (`a•••@e•••.com`) until the interview stage, then shown | Removed |
-| Gender, age or date of birth, marital status, photo, nationality, religion, caste, family names (labelled CV lines) | Shown in the CV | Replaced with `[hidden]` | Removed |
+| Gender, age or date of birth, marital status, photo, nationality, religion, caste, family names, address and reference lines | Shown in the CV | Replaced with `[hidden]` | Removed |
 | Gendered pronouns in the CV's prose | Shown | Shown (not rewritten) | Neutralised |
-| The rest of the CV | Shown | Shown | Shown |
+| The rest of the CV (work history, employers, city, skills, current CTC) | Shown | Shown | **Shown** |
 
 The recruiter can switch on **Blind view** on the candidate page to mask identity in what they are reading. Clients never receive the raw values for masked fields; masking happens on the server.
 
@@ -110,7 +110,7 @@ scripts/   qa.sh  login-fit.sh  e2e-ui.sh  prod-smoke.sh  deploy.sh  backup.sh  
 
 | What | Command | Last result |
 |---|---|---|
-| Backend (pytest) | `docker compose exec web python -m pytest` | 279 passed |
+| Backend (pytest) | `docker compose exec web python -m pytest` | 282 passed |
 | Frontend (Vitest) | `docker compose exec frontend npx vitest run` | 32 passed |
 | Types and lint | `docker compose exec frontend npx tsc -b` and `npm run lint` | 0 errors |
 | Rendered UI checks | `scripts/qa.sh` | 82 passed |
@@ -128,7 +128,7 @@ The browser suites run in a Playwright Docker image that is pulled the first tim
 
 | File | What it is |
 |---|---|
-| [docs/BRIEF.md](docs/BRIEF.md) | The client brief and every labelled assumption (A1 to A23) |
+| [docs/BRIEF.md](docs/BRIEF.md) | The client brief and every labelled assumption (A1 to A24) |
 | [docs/TDD.md](docs/TDD.md) | Technical design: architecture, data model, AI behaviour and failure modes, testing |
 | [docs/DESIGN.md](docs/DESIGN.md) | Design language: tokens, type, components |
 | [deployment.md](deployment.md) | Run, test and deploy, with environment variable names |

@@ -9,7 +9,7 @@ The hard part of this product is rules on the server: who may see which candidat
 The model returns a quote for each criterion. Before saving, I normalise whitespace in both texts and check the quote is an exact substring of the CV text. If it isn't, I drop the quote, mark "No evidence found" and score that criterion zero. A substring check is deliberately dumb: it cannot be argued with, so a model cannot buy points with an invented sentence.
 
 ## How is blind scoring implemented and tested?
-`ai/redact.py` strips name, gender lines, age and date of birth, marital status, photo markers, family names, emails, phones and gendered pronouns from the text before it is sent to any scorer. Images never leave the server. There is a dedicated redaction test, and the candidate page has a Blind view that masks identity in the display as well. Redaction is for scoring; recruiters still see the original CV.
+`ai/redact.py` strips name, gender, age and date of birth, marital status, photo markers, family names, addresses, reference lines, emails, phones and gendered pronouns before text goes to any scorer. Images never leave the server. Dedicated redaction tests cover it, and the candidate page has a Blind view. It is minimisation, not anonymisation: work history, employers, city and CTC still go. Recruiters still see the original CV.
 
 ## How is client isolation enforced?
 One queryset method, `Candidate.objects.visible_to(user)`, is the only way client-facing views fetch candidates. For a client it returns only candidates with a submission to their org. Anything else is not "forbidden", it simply doesn't exist, so another org's candidate is a 404. A permission matrix test calls every endpoint as five kinds of caller, and a separate test checks client A against client B's candidate.
@@ -39,4 +39,4 @@ OCR for scanned CVs: out of the time budget, so scans are flagged for a person. 
 OCR for scans. A candidate-facing consent and deletion link. Calibrating scores against recruiter and client outcomes, using the agreement report as the data source. Then audit export, per-client branding, and recruiter teams with scoped access. The first thing I'd measure is whether clients accept Strong candidates more often than Possible ones.
 
 ## The numbers
-279 backend tests (155 of them end-to-end API tests), 32 frontend tests, 82 rendered-UI checks, 13 login-fit sizes, 36 browser end-to-end checks, a 34-check production smoke test, and 23 assumptions labelled A1 to A23. The ten rules the brief demands each have a named test, plus a permission matrix over every endpoint for five caller types.
+282 backend tests (155 of them end-to-end API tests), 32 frontend tests, 82 rendered-UI checks, 13 login-fit sizes, 36 browser end-to-end checks, a 34-check production smoke test, and 24 assumptions labelled A1 to A24. The ten rules the brief demands each have a named test, plus a permission matrix over every endpoint for five caller types.

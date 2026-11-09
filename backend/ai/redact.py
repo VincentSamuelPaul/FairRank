@@ -1,7 +1,7 @@
 """Blind scoring (rule 3) and contact masking (rule 6).
 
 `redact_for_scoring` strips name, gender, age/date of birth, photo mentions and marital
-status (plus contact details and family-name lines) from the text before it reaches any
+status (plus contact details, address lines, reference lines and family-name lines) from the text before it reaches any
 LLM. Images are never sent: only extracted text leaves this server.
 """
 import re
@@ -22,7 +22,9 @@ _LABELLED_LINE = re.compile(
         |age
         |marital[ \t]+status|marital|civil[ \t]+status
         |father'?s?[ \t]+name|mother'?s?[ \t]+name|husband'?s?[ \t]+name|spouse(?:'s)?[ \t]+name
-        |photo(?:graph)?|passport[ \t\-]size[ \t]+photo(?:graph)?|nationality|religion|caste)
+        |photo(?:graph)?|passport[ \t\-]size[ \t]+photo(?:graph)?|nationality|religion|caste
+        |(?:(?:current|permanent|present|residential|home|correspondence|mailing)[ \t]+)?address|residence|pin[ \t]*code|postal[ \t]+code
+        |referees?|references?|reference[ \t]+(?:name|contact|details?))
       [ \t]*[:\-–][ \t]*)
     [^\n]*$
     """
@@ -45,6 +47,25 @@ _PRONOUNS = {
 _PRONOUN_RE = re.compile(r"\b(" + "|".join(_PRONOUNS) + r")\b", re.I)
 
 
+_REF_HEADING = re.compile(r"^[ \t]*(?:references?|referees?)[ \t]*:?[ \t]*$", re.I)
+_ANY_HEADING = re.compile(r"^[ \t]*[A-Z][A-Z &/]{3,}[ \t]*:?[ \t]*$")
+
+
+def _mask_reference_blocks(text: str, replacement: str) -> str:
+    """A REFERENCES heading followed by lines: those lines name third parties, so they are masked up to the next heading or blank line."""
+    out, masking = [], False
+    for line in text.split("\n"):
+        if _REF_HEADING.match(line):
+            masking = True
+            out.append(line)
+        elif masking and (not line.strip() or _ANY_HEADING.match(line)):
+            masking = False
+            out.append(line)
+        else:
+            out.append(replacement if masking else line)
+    return "\n".join(out)
+
+
 def _neutral_pronoun(match: re.Match) -> str:
     word = match.group(1)
     repl = _PRONOUNS[word.lower()]
@@ -60,7 +81,8 @@ def _redact_name(text: str, full_name: str) -> str:
 
 def redact_for_scoring(text: str, full_name: str = "") -> str:
     """Return `text` with protected attributes and contact details removed."""
-    out = _LABELLED_LINE.sub(lambda m: f"{m.group('label').rstrip()} {PLACEHOLDER}", text)
+    out = _mask_reference_blocks(text, PLACEHOLDER)
+    out = _LABELLED_LINE.sub(lambda m: f"{m.group('label').rstrip()} {PLACEHOLDER}", out)
     out = _EMAIL.sub(PLACEHOLDER, out)
     out = _URL.sub(PLACEHOLDER, out)
     out = _AGE_PHRASES.sub(PLACEHOLDER, out)
@@ -105,4 +127,4 @@ def hide_protected_lines(text: str) -> str:
         if re.fullmatch(r"[ \t\-•*▪●]*(?:(?:candidate|full)[ \t]+)?name[ \t]*[:\-–][ \t]*", label, re.I):
             return m.group(0)
         return f"{label}[hidden]"
-    return _LABELLED_LINE.sub(repl, text)
+    return _LABELLED_LINE.sub(repl, _mask_reference_blocks(text, "[hidden]"))

@@ -26,7 +26,7 @@ docker compose down                                   # stop
 ## Automated tests
 
 ```bash
-docker compose exec web python -m pytest -q           # backend, expect 279 passed, about 4 minutes (don't run two at once)
+docker compose exec web python -m pytest -q           # backend, expect 282 passed, about 4 minutes (don't run two at once)
 docker compose exec frontend npm test -- --run        # frontend, expect 32 passed
 ```
 

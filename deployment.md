@@ -1,7 +1,7 @@
 # deployment.md
 
 Repo: https://github.com/VincentSamuelPaul/FairRank (keep it public until the review is finished).
-Live app: https://fairrank.vincents.systems (synthetic data, demo logins in section 4). It currently runs the Docker development stack behind a Cloudflare Tunnel, not the production Caddy build; section 3 is the exact procedure for the production build, and section 1 reproduces everything a reviewer needs on one machine.
+Live app: https://fairrank.vincents.systems (synthetic data, demo logins in section 4). It currently runs the Docker development stack behind a Cloudflare Tunnel with the offline scorer (no CV leaves the server), not the production Caddy build; section 3 is the exact procedure for the production build, and section 1 reproduces everything a reviewer needs on one machine.
 
 ## 1. Run it locally (Docker, about 5 minutes)
 
@@ -27,7 +27,7 @@ Open http://localhost:5173 and sign in with a demo login (section 4). Blank valu
 
 | What | Command | Result when last run |
 |---|---|---|
-| Backend (pytest), 279 tests | `docker compose exec web python -m pytest` | 279 passed |
+| Backend (pytest), 282 tests | `docker compose exec web python -m pytest` | 282 passed |
 | Frontend (Vitest), 32 tests | `docker compose exec frontend npx vitest run` | 32 passed |
 | Types and lint | `docker compose exec frontend npx tsc -b` and `npm run lint` | 0 errors |
 | Rendered UI, 82 checks | `scripts/qa.sh` | 82 passed |
