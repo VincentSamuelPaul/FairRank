@@ -164,7 +164,7 @@ Counts below were measured on the final code in this environment (Docker stack, 
 
 **Cut.** OCR for scanned CVs (flagged for a person instead, A3); drag-and-drop on the pipeline board (a "Move to" menu instead); real email and SMS; a candidate-facing consent link.
 
-**Known limits, stated plainly.** The "Drafting scorecard" steps in the New requisition dialog are an estimated sequence, because the create endpoint is synchronous and has no progress feed. Duplicate detection also matches the same person across requisitions (by design, A11). CTC is read from CV text for display only. Not deployed to a public host from the build machine; `deployment.md` gives the exact steps. Free-tier LLM quotas are the practical ceiling on batch speed, which is why the queue batches and backs off.
+**Known limits, stated plainly.** The "Drafting scorecard" steps in the New requisition dialog are an estimated sequence, because the create endpoint is synchronous and has no progress feed. Duplicate detection also matches the same person across requisitions (by design, A11). CTC is read from CV text for display only. The public demo runs the development stack (Django DEBUG on) behind a Cloudflare Tunnel; the production build was tested on localhost only, and `deployment.md` gives the exact steps to deploy it. Free-tier LLM quotas are the practical ceiling on batch speed, which is why the queue batches and backs off.
 
 **Next.** OCR for scans; a candidate consent and deletion link; calibrating scores against recruiter and client outcomes (the agreement report is the data source); per-client branding; audit export; role-scoped recruiter teams.
 
